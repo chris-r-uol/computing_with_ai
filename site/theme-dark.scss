@@ -1,7 +1,16 @@
 /*-- scss:defaults --*/
-$body-bg: #0d1117;
-$body-color: #e6edf3;
-$link-color: #79b8ff;
-$code-color: #e6edf3;
-$code-bg: #161b22;
-$navbar-bg: #0d1117;
+// The dark theme's Bootstrap variables. See theme-light.scss for why these
+// exist and why each one must mirror a --cwai-* token in styles.css.
+$body-bg: #0e1620;
+$body-color: #dfe8ef;
+$link-color: #6fd3e0;
+$link-hover-color: #6fd3e0;
+$code-color: #dfe8ef;
+$code-bg: #111b25;
+$pre-color: #dfe8ef;
+$navbar-bg: #0e1620;
+$border-color: #8292a0;
+$card-bg: #15202b;
+$input-bg: #15202b;
+$input-color: #dfe8ef;
+$input-border-color: #8292a0;

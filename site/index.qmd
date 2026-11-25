@@ -19,6 +19,7 @@ connection, you can still read the lesson.
 Both routes cover the same material. Pick the one that suits you today, and
 know that you can switch at any point.
 
+::: {.cwai-routes}
 ::: {.route}
 ### Codespace-first
 
@@ -27,7 +28,9 @@ change it and see what happens. Use this site as **reference**: the
 [glossary](glossary.qmd), the [data page](data.qmd) and a second look at an
 explanation.
 
+::: {.route-when}
 Choose this if you are comfortable in a code editor and want to learn by doing.
+:::
 :::
 
 ::: {.route}
@@ -37,20 +40,45 @@ You read each notebook here first, from top to bottom, then open the same
 notebook in the Codespace and run it. The Codespace is somewhere to type; the
 explanation is on this page.
 
+::: {.route-when}
 Choose this if you would rather understand a step before you try it, or if you
 are new to programming and want to see the result before you write any code.
+:::
+:::
 :::
 
 ## If your Codespace will not connect
 
+::: {.cwai-notice}
 Keep going on this site. Read the notebook, follow the output, and use the
 glossary for any word you do not know. Reconnect when you can and run the
-notebook then. You lose minutes, not a morning.
+notebook then. **You lose minutes, not a morning.**
+:::
 
 ## Where things are
 
-Use the sidebar to move between stages. The [data page](data.qmd) lists every
-dataset with its licence. The [glossary](glossary.qmd) gives each technical term
-in English and Chinese. The [accessibility statement](accessibility.qmd)
-explains how accessible this site is and what to do if something does not work
-for you.
+Use the sidebar to move between stages. Each stage lists its notebooks, and the
+one you are reading is marked.
+
+::: {.cwai-grid}
+::: {.cwai-card}
+[Data](data.qmd){.cwai-card-title}
+
+Every dataset in the module, where it came from, which years it covers and the
+licence it is used under.
+:::
+
+::: {.cwai-card}
+[Glossary](glossary.qmd){.cwai-card-title}
+
+Each technical term in English and Chinese, with a one-line explanation. Use it
+whenever a word stops you.
+:::
+
+::: {.cwai-card}
+[Accessibility](accessibility.qmd){.cwai-card-title}
+
+How accessible this site is, what we have tested, what we have not, and what to
+do if something does not work for you.
+:::
+:::

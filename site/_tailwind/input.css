@@ -1,0 +1,519 @@
+/*
+ * Design layer for the Computing with AI site. Source file; the build artefact
+ * is site/tailwind.css (committed, and checked for drift in CI by
+ * `scripts/build_tailwind.py --check`). Edit this, never that.
+ *
+ * The visual idea is a transport schematic: ink on cool paper, one petrol-teal
+ * line colour, and hierarchy drawn with hairlines and small station markers
+ * rather than with shadows, gradients or photography. The sidebar's nested
+ * items hang off a vertical line and the current page is marked on it, which is
+ * both the strongest theme cue and the most useful thing on the page.
+ *
+ * Every colour is a `--cwai-*` token from site/styles.css, which is where the
+ * contrast test measures the palette. No colour literal belongs in this file.
+ *
+ * Constraints this layer is written against, all of them load-bearing:
+ *   - Bootstrap stays. Tailwind's preflight is off (see tailwind.config.js), so
+ *     these rules add to Quarto's chrome instead of replacing it.
+ *   - Nothing may force sideways scrolling at 320px -- and nothing here hides
+ *     overflow to fake that, because the accessibility statement makes a
+ *     published claim about reflow that has to be true.
+ *   - It must be legible to a tired, anxious reader at 22:00, which is why
+ *     there is no animation beyond a colour fade and no decorative motion.
+ *
+ * Two mechanical notes, both of them consequences of turning preflight off:
+ *
+ *   1. The rules below sit OUTSIDE `@layer components` on purpose. Tailwind
+ *      tree-shakes `@layer components` against the scanned content, so a rule
+ *      naming a Quarto class (`.quarto-title`, `#TOC`) that appears in no .qmd
+ *      file is silently dropped from the build. Unlayered CSS is emitted
+ *      verbatim. `@tailwind utilities` stays last so an inline utility in a
+ *      .qmd can still override a component rule.
+ *   2. Every rule that sets a border width also says `border-solid`. Preflight
+ *      is what normally sets `border-style: solid` on everything, so without
+ *      it a lone `border-t` computes to a zero-width border and draws nothing.
+ *      Restoring it globally is worse than the disease: `border-style: solid`
+ *      on `*` hands every element on the page the initial `medium` width and
+ *      boxes the whole document in lines. It is set per rule instead.
+ */
+
+@tailwind base;
+@tailwind components;
+
+/* ------------------------------------------------------------------ *
+ * Page frame
+ * ------------------------------------------------------------------ */
+
+body {
+  @apply cw-bg-bg cw-font-sans cw-text-ink;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+/* The line colour, drawn once across the top of every page. The only purely
+   decorative mark on the site: a pseudo-element, so it is absent from the
+   accessibility tree, and it costs no request. */
+body::before {
+  content: "";
+  @apply cw-pointer-events-none cw-fixed cw-inset-x-0 cw-top-0 cw-h-[3px] cw-bg-accent;
+  z-index: 1200;
+}
+
+/* Headings: tighter and more consistently weighted than Bootstrap's, so
+   scanning a long notebook page is a matter of size rather than guesswork. */
+main.content h1,
+main.content h2,
+main.content h3,
+main.content h4,
+main.content h5,
+main.content h6 {
+  @apply cw-text-ink;
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+#title-block-header h1.title {
+  @apply cw-mb-0 cw-text-[1.9rem] sm:cw-text-[2.3rem];
+}
+
+/* A short segment of the line under the page title: the route starts here. */
+#title-block-header .quarto-title::after {
+  content: "";
+  @apply cw-mt-3 cw-block cw-h-[3px] cw-w-10 cw-rounded-full cw-bg-accent;
+}
+
+/* Bootstrap already underlines h2 with a hairline in $border-color, which is
+   our --cwai-border. Rather than add a second rule above it, mark the start of
+   that one: a short accent segment sitting on the line, like a named stretch
+   of a route. */
+main.content h2 {
+  @apply cw-relative cw-mt-10 cw-pb-2 cw-text-[1.4rem];
+}
+
+main.content h2::after {
+  content: "";
+  @apply cw-absolute cw-bottom-[-1px] cw-left-0 cw-h-[2px] cw-w-10 cw-bg-accent;
+}
+
+main.content h3 {
+  @apply cw-mt-8 cw-text-[1.15rem];
+}
+
+/* Reflow at 320px. Quarto lays #quarto-content out as a grid, and a grid item's
+   automatic minimum size is its min-content width. On a notebook page that is
+   the longest unbroken line of code -- 1692px on the smoke test -- so the
+   column refuses to shrink, the layout viewport grows to match, and the
+   toolbar's search button ends up past the right edge of a 320px screen, where
+   it cannot be reached. `min-width: 0` lets the column shrink and hands the
+   scrolling back to the code block, which is already a scroll container.
+   Measured in a 320px window; it is not visible from reading the CSS. */
+main.content {
+  min-width: 0;
+}
+
+/* Reading measure, on prose only, so tables, code and cards still use the full
+   column. Below about 700px this does nothing: the viewport is already
+   narrower than the cap. */
+main.content > p,
+main.content section > p,
+main.content section > ul,
+main.content section > ol,
+main.content > ul,
+main.content > ol {
+  max-width: 72ch;
+}
+
+main.content a:not(.btn):not(.anchorjs-link) {
+  @apply cw-text-link cw-underline;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.15em;
+}
+
+/* ------------------------------------------------------------------ *
+ * Sidebar: the route line
+ * ------------------------------------------------------------------ */
+
+#quarto-sidebar.sidebar {
+  @apply cw-border-0 cw-border-solid cw-border-r cw-border-edge cw-bg-surface;
+}
+
+.sidebar-header .sidebar-title a {
+  @apply cw-text-ink cw-no-underline;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* The first station marker, so the line motif starts at the module name. */
+.sidebar-header .sidebar-title a::before {
+  content: "";
+  @apply cw-mr-2 cw-inline-block cw-h-[0.7em] cw-w-[3px] cw-rounded-full cw-bg-accent;
+  vertical-align: -0.04em;
+}
+
+.sidebar-navigation .sidebar-item {
+  @apply cw-leading-snug;
+}
+
+.sidebar-navigation .sidebar-item-section > .sidebar-item-container > a,
+.sidebar-navigation .sidebar-item-section > .sidebar-item-container > button {
+  @apply cw-text-ink;
+  font-weight: 600;
+}
+
+/* A stage with no published notebooks is rendered by Quarto as plain text
+   rather than as a link. Say so with colour and weight, so it does not read as
+   a link that will not work. */
+.sidebar-navigation .sidebar-item-section > span.sidebar-item-text {
+  @apply cw-text-muted;
+  font-weight: 600;
+}
+
+.sidebar-navigation .sidebar-item a.sidebar-item-text {
+  @apply cw-rounded-[5px] cw-border-0 cw-text-ink cw-no-underline;
+}
+
+/* The notebooks of a stage hang off a vertical line: the stops on that stage's
+   route. */
+.sidebar-navigation ul.sidebar-section.depth1 {
+  @apply cw-ml-3 cw-border-0 cw-border-solid cw-border-l cw-border-edge cw-pl-2;
+}
+
+.sidebar-navigation .sidebar-item a.sidebar-item-text:hover {
+  @apply cw-bg-accent-soft;
+}
+
+/* "You are here", marked on the line. Three cues rather than one -- a bar, a
+   tint and a heavier weight -- so it survives both themes and a reader who
+   cannot tell the tint from the ground. */
+.sidebar-navigation .sidebar-item a.sidebar-item-text.active,
+.sidebar-navigation .sidebar-item a.sidebar-link.active {
+  @apply cw-border-0 cw-border-solid cw-border-l-[3px] cw-border-accent cw-bg-accent-soft cw-text-ink;
+  border-radius: 0 5px 5px 0;
+  font-weight: 650;
+}
+
+/* ------------------------------------------------------------------ *
+ * Table of contents, breadcrumbs, page navigation
+ * ------------------------------------------------------------------ */
+
+#TOC #toc-title,
+.page-columns .toc-title {
+  @apply cw-mb-2 cw-text-xs cw-uppercase cw-text-muted;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+}
+
+#TOC ul {
+  @apply cw-border-0 cw-border-solid cw-border-l cw-border-edge;
+}
+
+#TOC a.nav-link {
+  @apply -cw-ml-px cw-border-0 cw-border-solid cw-border-l-2 cw-border-transparent cw-py-1 cw-pl-3 cw-text-muted cw-no-underline;
+}
+
+#TOC a.nav-link:hover {
+  @apply cw-text-ink;
+}
+
+#TOC a.nav-link.active {
+  @apply cw-border-accent cw-text-ink;
+  font-weight: 600;
+}
+
+.quarto-title-breadcrumbs .breadcrumb,
+nav.quarto-page-breadcrumbs .breadcrumb {
+  @apply cw-mb-0 cw-text-sm cw-text-muted;
+}
+
+/* Reflow at 320px. The breadcrumb in the narrow-screen toolbar is long enough
+   on a notebook page -- "Stage 1: Programming from first principles > Smoke
+   test" -- to push that toolbar wider than the viewport. A flex item defaults
+   to `min-width: auto` and so refuses to shrink below its content, and the
+   overflow does not scroll: it widens the layout viewport and carries the
+   search button off the right edge, where it cannot be reached at all. These
+   four let the breadcrumb wrap instead. Found by measuring in a 320px window,
+   not by reading the CSS. */
+#quarto-header .quarto-secondary-nav .container-fluid,
+#quarto-header nav.quarto-page-breadcrumbs,
+#quarto-header .quarto-secondary-nav .breadcrumb,
+#quarto-header .quarto-secondary-nav .breadcrumb-item {
+  min-width: 0;
+}
+
+/* Previous and next become two real targets rather than two stray links. This
+   matters most on a phone, and on a stage landing page, where they are the only
+   way into a stage that has no notebooks in the sidebar yet. */
+/* `min-width: 0` and the wrapping below are not tidying: this nav is a direct
+   child of Quarto's #quarto-content grid, so its automatic minimum size is its
+   min-content width. Turning the two links into padded buttons pushed that to
+   347px, the grid column could no longer shrink to a 320px screen, and the
+   layout viewport grew with it until the toolbar's search button sat off the
+   right-hand edge. Caught by measuring a 320px window against the same page
+   with this stylesheet removed. */
+nav.page-navigation {
+  @apply cw-mt-10 cw-flex-wrap cw-gap-3 cw-border-0 cw-border-solid cw-border-t cw-border-edge cw-pt-5;
+  min-width: 0;
+}
+
+nav.page-navigation .nav-page {
+  min-width: 0;
+}
+
+nav.page-navigation .nav-page a.pagination-link {
+  @apply cw-inline-flex cw-max-w-full cw-items-center cw-gap-1 cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface cw-px-3 cw-py-2 cw-text-link cw-no-underline;
+}
+
+nav.page-navigation .nav-page a.pagination-link:hover {
+  @apply cw-bg-accent-soft;
+}
+
+nav.page-navigation .nav-page-text {
+  @apply cw-text-link;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------ *
+ * Route cards: the two ways through the material
+ * ------------------------------------------------------------------ */
+
+/* Goal 6 of the module design is that a student knows both routes exist and can
+   choose. Two cards side by side state the choice instead of burying it in a
+   paragraph; below the large breakpoint they stack in source order, so a phone
+   reader gets the same two options in the same order. */
+.cwai-routes {
+  @apply cw-mt-6 cw-grid cw-grid-cols-1 cw-gap-4 lg:cw-grid-cols-2;
+}
+
+.cwai-routes > section.route,
+.cwai-routes > .route {
+  @apply cw-m-0 cw-flex cw-h-full cw-flex-col cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface cw-p-5;
+}
+
+.cwai-routes .route > h3 {
+  @apply cw-mt-0 cw-flex cw-items-center cw-gap-2 cw-text-[1.1rem];
+}
+
+/* A station dot: a ring, so it reads as a stop on the line and not as a
+   bullet. */
+.cwai-routes .route > h3::before {
+  content: "";
+  @apply cw-inline-block cw-h-[0.7rem] cw-w-[0.7rem] cw-shrink-0 cw-rounded-full cw-border-solid cw-border-[3px] cw-border-accent cw-bg-surface;
+}
+
+.cwai-routes .route p {
+  max-width: none;
+}
+
+/* "Choose this if ..." -- the sentence that actually decides it for a student,
+   lifted out of the paragraph flow. `mt-auto` pins it to the foot of the card
+   so both cards' answers line up. */
+.route-when {
+  @apply cw-mt-auto cw-rounded-md cw-border-0 cw-border-solid cw-border-l-[3px] cw-border-accent cw-bg-accent-soft cw-px-3 cw-py-2 cw-text-[0.95rem] cw-text-ink;
+}
+
+.route-when > :last-child {
+  @apply cw-mb-0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Notices and link cards
+ * ------------------------------------------------------------------ */
+
+/* The degraded-mode panel. Deliberately calm rather than alarming: a student
+   whose Codespace will not connect does not need a red box, they need to be
+   told plainly that this page is enough. */
+.cwai-notice {
+  @apply cw-mt-5 cw-rounded-card cw-border-solid cw-border cw-border-l-[4px] cw-border-edge cw-border-l-accent cw-bg-accent-soft cw-px-4 cw-py-4;
+}
+
+.cwai-notice > :first-child {
+  @apply cw-mt-0;
+}
+
+.cwai-notice > :last-child,
+.cwai-notice p {
+  @apply cw-mb-0;
+  max-width: none;
+}
+
+.cwai-grid {
+  @apply cw-mt-6 cw-grid cw-grid-cols-1 cw-gap-4 md:cw-grid-cols-3;
+}
+
+.cwai-card {
+  @apply cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface cw-p-4;
+}
+
+.cwai-card > :first-child {
+  @apply cw-mt-0;
+}
+
+.cwai-card > :last-child {
+  @apply cw-mb-0;
+}
+
+.cwai-card p {
+  @apply cw-text-[0.95rem] cw-text-muted;
+  max-width: none;
+}
+
+.cwai-card > p:first-of-type {
+  @apply cw-mb-1;
+}
+
+.cwai-card-title {
+  @apply cw-block cw-text-[1.02rem];
+  font-weight: 650;
+}
+
+/* ------------------------------------------------------------------ *
+ * Code, tables, callouts
+ * ------------------------------------------------------------------ */
+
+/* Only the wrapper may clip: `overflow-hidden` on a <pre> would cut long
+   output lines off at the edge instead of letting them scroll, which on this
+   site means a student silently losing the end of a traceback. */
+main.content div.sourceCode {
+  @apply cw-overflow-hidden cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-code-bg;
+}
+
+main.content pre {
+  @apply cw-mb-0 cw-border-0 cw-bg-code-bg cw-px-4 cw-py-3 cw-text-code-fg;
+  font-size: 0.925rem;
+  overflow-x: auto;
+}
+
+main.content code {
+  @apply cw-font-mono;
+}
+
+/* Inline code: tinted and outlined, so `pandas` is distinguishable from
+   emphasis in the middle of a sentence. */
+main.content :not(pre) > code {
+  @apply cw-rounded cw-border-solid cw-border cw-border-edge cw-bg-code-bg cw-px-[0.3em] cw-py-[0.1em] cw-text-code-fg;
+  font-size: 0.9em;
+}
+
+/* Output is what the notebook answered, not what the student wrote. A dashed
+   edge tells the two apart at a glance on a page that is otherwise a column of
+   grey boxes. */
+main.content pre:not(.sourceCode),
+main.content .cell-output pre {
+  @apply cw-rounded-card cw-border cw-border-dashed cw-border-edge;
+}
+
+/* Tables scroll inside their own box. Without this the glossary's three columns
+   push the page sideways at 320px, which is the reflow failure this site has
+   had before. */
+main.content table {
+  @apply cw-block cw-max-w-full cw-overflow-x-auto cw-border-collapse cw-text-[0.95rem];
+}
+
+/* Except inside a code cell's output, where Quarto already supplies the scroll
+   box. A DataFrame stays a real table there: squeezing its columns until a date
+   wraps over three lines destroys the alignment that is the point of printing
+   one. Prose tables -- the glossary, the data page -- keep wrapping, which is
+   the right answer for them. */
+main.content .cell-output table {
+  @apply cw-table;
+  width: max-content;
+  max-width: none;
+}
+
+main.content table thead th {
+  @apply cw-border-0 cw-border-solid cw-border-b-2 cw-border-edge cw-bg-accent-soft cw-text-left cw-align-bottom cw-text-ink;
+  font-weight: 650;
+}
+
+main.content table th,
+main.content table td {
+  @apply cw-border-edge cw-px-3 cw-py-2 cw-align-top cw-text-ink;
+}
+
+main.content table tbody tr + tr th,
+main.content table tbody tr + tr td {
+  @apply cw-border-0 cw-border-solid cw-border-t cw-border-edge;
+}
+
+/* Callouts keep Quarto's coloured left edge and its per-type header tint. Those
+   carry the type (warning, note, tip) alongside the icon, and both themes were
+   measured in the browser rather than assumed: the warning header reads 15.6:1
+   in light and 8.8:1 in dark against its own ground. Only the frame is restyled,
+   with the left border left alone -- which is why these are three separate
+   longhand borders and not `@apply cw-border`, whose `border-color` would take
+   the left edge with it. */
+main.content .callout {
+  border-radius: 0.625rem;
+  border-top: 1px solid var(--cwai-border);
+  border-right: 1px solid var(--cwai-border);
+  border-bottom: 1px solid var(--cwai-border);
+}
+
+main.content .callout .callout-body,
+main.content .callout .callout-body-container {
+  @apply cw-bg-surface cw-text-ink;
+}
+
+main.content .callout p {
+  max-width: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Focus, motion
+ * ------------------------------------------------------------------ */
+
+/* A 3px ring with a 2px gap, in the focus token: measured at 7.5:1 (light) and
+   12.7:1 (dark) against the page background, and tabbed through in both themes
+   rather than inferred from those numbers. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--cwai-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* The search box is the exception, and tabbing to it is how that was found.
+   Quarto sets `.aa-Form .aa-Input:focus-visible { outline: none }` and rings
+   the enclosing form instead, in its own colour -- two pixels of Bootstrap
+   blue in light, white in dark. Both are visible, but neither is the focus
+   token, so the one control a student is most likely to reach by keyboard
+   looked different from everything else. Restated here at a specificity that
+   beats Quarto's. Quarto's `.nav-link:focus-visible` rule outranks the element
+   selectors above in the same way, so the table of contents is restated too.
+   Both were found by tabbing the page and reading the computed outline at each
+   stop, not by reading the CSS. */
+#quarto-search .aa-Form:focus-within,
+#quarto-search .aa-Form:has(.aa-Input:focus-visible),
+#TOC a.nav-link:focus-visible {
+  outline: 3px solid var(--cwai-focus);
+  outline-offset: 2px;
+}
+
+/* Background only, and deliberately not `color`. Quarto's theme toggle swaps a
+   class on <body>, so transitioning colour animates the whole page between
+   palettes -- and for those 120ms the text is a blend of the two, which is
+   measurably below AA. Hover feedback does not need it. */
+a,
+.sidebar-item a,
+nav.page-navigation a.pagination-link {
+  transition: background-color 120ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@tailwind utilities;

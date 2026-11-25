@@ -50,6 +50,12 @@ jobs:
           CWAI_PUBLISH_GATE: ${{ inputs.publish-gate && '1' || '' }}
       # Student notebooks are generated from the full ones; fail if they have drifted.
       - run: uv run python scripts/build_student_notebooks.py --check
+      # site/tailwind.css is generated from site/_tailwind/ and committed, so
+      # that no student's browser has to fetch Tailwind from a CDN. Rebuild it
+      # here and fail if the committed copy differs. This downloads the pinned
+      # standalone Tailwind binary from the GitHub release named in
+      # scripts/build_tailwind.py.
+      - run: uv run python scripts/build_tailwind.py --check
       - run: uv run python scripts/check_licences.py
       - if: inputs.run-notebooks
         run: uv run python scripts/run_notebooks.py notebooks/

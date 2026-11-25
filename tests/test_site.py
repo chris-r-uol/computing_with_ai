@@ -163,16 +163,35 @@ def contrast(a: str, b: str) -> float:
 
 
 # (foreground, background, minimum ratio): 4.5 for text, 3 for non-text.
+#
+# Two grounds, not one: --cwai-bg is the page and --cwai-surface is what the
+# sidebar, the route cards and the reference cards sit on, so every text token
+# is checked against both. Anything that only ever appears on one of them would
+# still be an untested pair the first time somebody moved it.
 PAIRS = [
     ("fg", "bg", 4.5),
+    ("fg", "surface", 4.5),
     ("muted", "bg", 4.5),
+    ("muted", "surface", 4.5),
     ("link", "bg", 4.5),
+    ("link", "surface", 4.5),
     ("code-fg", "code-bg", 4.5),
     ("link", "code-bg", 4.5),
     ("fg", "callout-bg", 4.5),
     ("link", "callout-bg", 4.5),
+    # The accent tint carries the "Choose this if ..." lines, the current
+    # sidebar item and the table headers, all of which hold body-sized text.
+    ("fg", "accent-soft", 4.5),
+    ("link", "accent-soft", 4.5),
+    # Text on a filled accent block.
+    ("accent-fg", "accent", 4.5),
     ("border", "bg", 3.0),
+    ("border", "surface", 3.0),
+    ("border", "accent-soft", 3.0),
     ("focus", "bg", 3.0),
+    ("focus", "surface", 3.0),
+    ("accent", "bg", 3.0),
+    ("accent", "surface", 3.0),
 ]
 
 
@@ -235,9 +254,16 @@ SCSS_TO_TOKEN = {
     "body-bg": "bg",
     "body-color": "fg",
     "link-color": "link",
+    "link-hover-color": "link",
     "code-color": "code-fg",
     "code-bg": "code-bg",
+    "pre-color": "code-fg",
     "navbar-bg": "bg",
+    "border-color": "border",
+    "card-bg": "surface",
+    "input-bg": "surface",
+    "input-color": "fg",
+    "input-border-color": "border",
 }
 
 
@@ -263,6 +289,116 @@ def test_scss_theme_values_match_the_css_tokens(scss_name, selector):
             f"{scss_name}: ${name} is {value} but --cwai-{token} is "
             f"{tokens[token]}; the contrast test only reads the CSS."
         )
+
+
+# ---------------------------------------------------------------------------
+# The Tailwind design layer. site/tailwind.css is generated from
+# site/_tailwind/ and committed; scripts/build_tailwind.py --check rebuilds it
+# in CI and fails if the two have diverged. The tests below guard the things
+# that check cannot see: that the stylesheet is wired up, that the palette has
+# exactly one home, that nothing reaches a third party, and that Tailwind's
+# utilities cannot collide with the Bootstrap classes Quarto's chrome is
+# built from.
+# ---------------------------------------------------------------------------
+
+TAILWIND_SRC = SITE_SRC / "_tailwind" / "input.css"
+TAILWIND_CONFIG = SITE_SRC / "_tailwind" / "tailwind.config.js"
+TAILWIND_OUT = SITE_SRC / "tailwind.css"
+
+
+def test_generated_stylesheet_is_committed_and_loaded_after_the_tokens():
+    assert TAILWIND_OUT.exists(), "run scripts/build_tailwind.py"
+    assert "GENERATED FILE" in TAILWIND_OUT.read_text()
+    css = yaml.safe_load((SITE_SRC / "_quarto.yml").read_text())["format"]["html"][
+        "css"
+    ]
+    # styles.css declares the --cwai-* tokens the design layer refers to, and
+    # the reflow safety net; tailwind.css must come after it so the design
+    # layer wins on equal specificity.
+    assert css == ["styles.css", "tailwind.css"], css
+
+
+def test_design_layer_holds_no_colour_of_its_own():
+    """Every colour must be a --cwai-* token, because only those are measured.
+
+    A hex value written straight into the design layer is a colour the contrast
+    test above never sees, sitting under a published conformance statement.
+    """
+    literals = re.findall(r"#[0-9a-fA-F]{3,8}\b", TAILWIND_SRC.read_text())
+    assert not literals, f"{TAILWIND_SRC.name} names colours directly: {literals}"
+
+
+def test_tailwind_utilities_are_prefixed_so_they_cannot_clobber_bootstrap():
+    """Unprefixed, Tailwind emits a utility for any scanned word that names one.
+
+    Several of those words are ordinary English that this site's prose uses,
+    and several are also Bootstrap class names that Quarto's chrome depends on.
+    The first build of this site emitted `.collapse { visibility: collapse }`,
+    which beat Bootstrap's and hid the sidebar on every page.
+    """
+    assert re.search(r'prefix:\s*"cw-"', TAILWIND_CONFIG.read_text())
+    collidable = {
+        "collapse",
+        "container",
+        "table",
+        "fixed",
+        "static",
+        "sticky",
+        "absolute",
+        "relative",
+        "visible",
+        "invisible",
+        "hidden",
+        "block",
+        "inline",
+        "flex",
+        "grid",
+        "border",
+        "shadow",
+        "rounded",
+        "active",
+        "disabled",
+        "contents",
+        "isolate",
+    }
+    emitted = set(
+        re.findall(r"^\.([a-z][\w-]*)\s*[,{]", TAILWIND_OUT.read_text(), re.M)
+    )
+    assert not (emitted & collidable), emitted & collidable
+
+
+# The two Quarto injects into every page rendered by its Jupyter engine. They
+# are not ours and removing them is a Quarto question, not a stylesheet one,
+# but they are listed rather than ignored: this site has to open on a poor
+# connection from Chengdu, so a new third-party request should fail a build
+# and be a decision somebody takes on purpose.
+ALLOWED_THIRD_PARTY = {
+    "https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js",
+    "https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js",
+}
+
+
+def test_pages_fetch_no_new_third_party_resource(site):
+    """Nothing the browser must wait for may come from another origin.
+
+    In particular the Tailwind stylesheet is built into site/tailwind.css and
+    served from this site; cdn.tailwindcss.com is a browser-side JIT build and
+    would be a blocking request to a third party on every page load.
+    """
+    found: set[str] = set()
+    for page in site.rglob("*.html"):
+        html = page.read_text()
+        found |= set(
+            re.findall(r'<(?:script|link)[^>]+(?:src|href)="(https?://[^"]+)"', html)
+        )
+    assert not (found - ALLOWED_THIRD_PARTY), found - ALLOWED_THIRD_PARTY
+    assert "cdn.tailwindcss.com" not in "".join(sorted(found))
+
+
+def test_checks_workflow_verifies_the_generated_stylesheet():
+    """A committed build artefact whose freshness check went missing is a trap."""
+    workflow = (REPO / ".github/workflows/checks.yml").read_text()
+    assert "scripts/build_tailwind.py --check" in workflow
 
 
 def test_every_stage_directory_has_a_sidebar_section():

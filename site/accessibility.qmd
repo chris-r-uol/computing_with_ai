@@ -19,13 +19,17 @@ the minimum.
   so that a screen reader pronounces them correctly.
 - The colour pairs defined in the site's stylesheet meet the AA contrast ratios
   (4.5:1 for text, 3:1 for interface boundaries and focus indicators) in both
-  the light and the dark theme, and we checked the text on five pages against
-  those ratios in both themes. You can switch theme with the toggle on each page.
+  the light and the dark theme. We also measured every piece of visible text on
+  six pages, in both themes and at two window widths, against the colour
+  actually painted behind it, and found nothing below those ratios. You can
+  switch theme with the toggle on each page.
 - On the home page, every link, button and the search box can be reached with
-  the Tab key in an order that follows the page, and each shows a visible focus
-  indicator of at least 2 pixels, in both themes. A "skip to main content" link
-  is the first stop. Other pages use the same layout and components but we have
-  not walked them one by one.
+  the Tab key in an order that follows the page, and each shows the same
+  visible focus indicator: a 3 pixel ring with a 2 pixel gap, measured at no
+  less than 7.4:1 against the page in the light theme and 11.4:1 in the dark
+  one. A "skip to main content" link is the first stop, and no stop was off
+  the screen. Other pages use the same layout and components but we have not
+  walked them one by one.
 - Links in the body text are underlined as well as coloured, so colour is not the
   only cue.
 - We checked the heading levels on every page and none skips a level. Pages that
@@ -35,22 +39,22 @@ the minimum.
   not as an image or an embedded viewer.
 - We measured the width of every page we checked, with the browser window set to
   640 pixels wide (as a 1280 pixel window at 200% zoom would be) and to 320
-  pixels (400%), and none needs sideways scrolling. This was a window-width
-  emulation, not real browser zoom, and it left out code blocks and tables, which
-  are meant to scroll inside their own box.
+  pixels (400%), in both themes, and none needs sideways scrolling. This was a
+  window-width emulation, not real browser zoom, and it left out code blocks,
+  code output and tables, which are meant to scroll inside their own box.
 
 ## Known limitations
 
 This is our current position, and we will update it as the site changes.
 
 - **Not yet independently audited, and testing so far is limited.** On
-  25 November 2026 we checked colour contrast on five pages in both themes with
-  an automated script, walked the home page with the Tab key in both themes, and
-  checked reflow at 640 and 320 pixels on six pages, all in one Chromium-based
-  browser. We did not walk every page with the keyboard (the others share the
-  home page's layout and components), did not test text-only zoom, other
-  browsers, or any screen reader, and did not run a full audit with assistive
-  technology. We therefore describe the site as partially compliant.
+  25 November 2026 we measured colour contrast and reflow on six pages, in both
+  themes and at both 640 and 320 pixels, with a script run inside the page, and
+  walked the home page with the Tab key in both themes, all in one
+  Chromium-based browser. We did not walk every page with the keyboard (the
+  others share the home page's layout and components), did not test text-only
+  zoom, other browsers, or any screen reader, and did not run a full audit with
+  assistive technology. We therefore describe the site as partially compliant.
 - **Stage pages.** Every stage is listed in the sidebar, but the stages that
   have no published notebooks yet are listed without being linked: their names
   render as plain text rather than as links. Their landing pages can still be

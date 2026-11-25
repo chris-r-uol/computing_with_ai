@@ -1,8 +1,25 @@
 /*-- scss:defaults --*/
-// Values mirror the tokens in styles.css; every pair there is checked for AA contrast.
-$body-bg: #ffffff;
-$body-color: #1f2328;
-$link-color: #0550ae;
-$code-color: #1f2328;
-$code-bg: #f6f8fa;
-$navbar-bg: #ffffff;
+// Bootstrap's variables for the light theme. Quarto still builds its Bootstrap
+// chrome -- sidebar, table of contents, search, callouts, code highlighting --
+// and this file only tells Bootstrap which colours to compute from. The
+// Bootswatch themes (cosmo/darkly) were dropped in favour of plain Bootstrap
+// with these variables: one less set of opinions fighting the design layer.
+//
+// Every value mirrors a --cwai-* token in styles.css, and
+// tests/test_site.py::test_scss_theme_values_match_the_css_tokens fails if one
+// drifts. Only the CSS tokens are measured for contrast, so a colour that
+// exists only here would be an unmeasured copy under a published conformance
+// statement.
+$body-bg: #f7f9fa;
+$body-color: #10212e;
+$link-color: #0b5c6b;
+$link-hover-color: #0b5c6b;
+$code-color: #10212e;
+$code-bg: #eef2f5;
+$pre-color: #10212e;
+$navbar-bg: #f7f9fa;
+$border-color: #6b7b87;
+$card-bg: #ffffff;
+$input-bg: #ffffff;
+$input-color: #10212e;
+$input-border-color: #6b7b87;

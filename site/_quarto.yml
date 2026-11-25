@@ -50,10 +50,22 @@ website:
 
 format:
   html:
+    # Plain Bootstrap with our own variables, rather than a Bootswatch theme:
+    # Quarto's chrome (sidebar, table of contents, search, callouts, code
+    # highlighting) still rests on Bootstrap, which several accessibility tests
+    # already assume, but one less set of borrowed opinions fights the design
+    # layer. Not `theme: none` -- rebuilding Quarto's chrome is a large surface
+    # to get subtly wrong.
     theme:
-      light: [cosmo, theme-light.scss]
-      dark: [darkly, theme-dark.scss]
-    css: styles.css
+      light: theme-light.scss
+      dark: theme-dark.scss
+    # styles.css first: it declares the --cwai-* colour tokens and the reflow
+    # safety net. tailwind.css is generated from site/_tailwind/ by
+    # scripts/build_tailwind.py and must load after, so the design layer wins.
+    # Neither is fetched from a CDN; both are served from this site.
+    css:
+      - styles.css
+      - tailwind.css
     toc: true
     toc-depth: 3
     code-copy: true

@@ -37,6 +37,7 @@ dev = [
     "pyyaml",
     "quarto-cli==1.11.9",
     "actionlint-py",
+    "pytailwindcss==0.4.2",
 ]
 
 [tool.pytest.ini_options]
