@@ -4,8 +4,7 @@ title: "Accessibility statement"
 
 This statement applies to the Computing with AI course site, the reading copy of
 the material for the joint module between Southwest Jiaotong University and the
-University of Leeds. It was prepared on 25 November 2026 and last reviewed on
-25 November 2026.
+University of Leeds. It was prepared and last reviewed on 25 November 2026.
 
 We want everyone on the module to be able to use this site. We aim to meet the
 Web Content Accessibility Guidelines, WCAG 2.2, level AA. The UK Public Sector
