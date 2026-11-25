@@ -5,7 +5,8 @@ under ``student/`` are generated and never hand-maintained. A solution cell is
 replaced by a stub, and its outputs are cleared, so no answer text leaves with it.
 
 Solutions are deliberately open elsewhere in the module: students can always
-reach the answer through the hint tiers on the site. What must never happen is
+reach the answer through the hint tiers (today in ``hints/``, and on the site
+once that interface is built). What must never happen is
 an answer sitting in the notebook a student is meant to write in, which is why
 this stripping is tested and checked in CI.
 
