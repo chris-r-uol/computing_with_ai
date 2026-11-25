@@ -1,8 +1,16 @@
 import geopandas as gpd
 import pyogrio
 import pytest
-from build_osm import BBOXES, HIGHWAY_KEEP, build_network, build_place, clip
-from shapely.geometry import LineString, Point
+from build_osm import (
+    BBOXES,
+    HIGHWAY_KEEP,
+    build_network,
+    build_place,
+    clip,
+    filter_edges,
+    filter_stations,
+)
+from shapely.geometry import LineString, MultiLineString, Point
 
 from cwai import registry
 
@@ -134,3 +142,84 @@ def test_build_place_uses_registry_path(tmp_path, source):
     out = build_place("leeds", source, root=tmp_path)
     assert out == tmp_path / registry.get("network-leeds").relpath
     assert out.exists()
+
+
+def test_clip_reprojects_bbox_for_projected_crs():
+    gdf = _lines().to_crs("EPSG:27700")
+    out = clip(gdf, LEEDS)
+    assert out.crs == gdf.crs
+    assert set(out["name"]) == {"inside", "straddle"}
+    east_edge = (
+        gpd.GeoSeries([Point(LEEDS[2], 53.80)], crs="EPSG:4326")
+        .to_crs(gdf.crs)
+        .x.iloc[0]
+    )
+    straddle = out.set_index("name").loc["straddle"].geometry
+    assert straddle.bounds[2] == pytest.approx(east_edge, abs=50)
+
+
+def test_clip_line_leaving_and_reentering_becomes_multilinestring():
+    gdf = gpd.GeoDataFrame(
+        {"name": ["loop"]},
+        geometry=[
+            LineString([(-1.50, 53.80), (-1.30, 53.80), (-1.30, 53.78), (-1.50, 53.78)])
+        ],
+        crs="EPSG:4326",
+    )
+    geom = clip(gdf, LEEDS).geometry.iloc[0]
+    assert isinstance(geom, MultiLineString)
+    assert len(geom.geoms) == 2
+
+
+def test_bbox_read_does_not_change_result(tmp_path, source):
+    """Reading with bbox= must give the same features as reading everything."""
+    out = tmp_path / "leeds.gpkg"
+    build_network(source, "leeds", out)
+    for layer, name in (("edges", "lines"), ("stations", "points")):
+        full = clip(
+            filter_edges(pyogrio.read_dataframe(source, layer=name))
+            if layer == "edges"
+            else filter_stations(pyogrio.read_dataframe(source, layer=name)),
+            LEEDS,
+        )
+        built = pyogrio.read_dataframe(out, layer=layer)
+        assert len(built) == len(full)
+        assert sorted(built.geometry.to_wkt()) == sorted(full.geometry.to_wkt())
+
+
+def test_no_station_tags_raises_and_writes_nothing(tmp_path):
+    src = tmp_path / "nostations.gpkg"
+    _make_fixture(src)
+    points = gpd.GeoDataFrame(
+        {"name": ["Shop"], "other_tags": ['"shop"=>"bakery"']},
+        geometry=[Point(-1.55, 53.80)],
+        crs="EPSG:4326",
+    )
+    points.to_file(src, layer="points", driver="GPKG")
+    out = tmp_path / "leeds.gpkg"
+    with pytest.raises(ValueError, match="stations"):
+        build_network(src, "leeds", out)
+    assert not out.exists()
+
+
+def test_stations_outside_bbox_only_raises_naming_bbox(tmp_path):
+    src = tmp_path / "far.gpkg"
+    _make_fixture(src)
+    points = gpd.GeoDataFrame(
+        {"name": ["Truro"], "other_tags": ['"railway"=>"station"']},
+        geometry=[Point(-5.05, 50.15)],
+        crs="EPSG:4326",
+    )
+    points.to_file(src, layer="points", driver="GPKG")
+    out = tmp_path / "leeds.gpkg"
+    with pytest.raises(ValueError, match="no features"):
+        build_network(src, "leeds", out)
+    assert not out.exists()
+
+
+def test_build_place_builds_readable_file_with_attribution(tmp_path, source):
+    out = build_place("leeds", source, root=tmp_path)
+    assert {n for n, _ in pyogrio.list_layers(out)} == {"edges", "stations"}
+    assert len(pyogrio.read_dataframe(out, layer="edges")) == 2
+    attribution = (out.parent / "ATTRIBUTION.txt").read_text(encoding="utf-8")
+    assert attribution.strip() == registry.get("network-leeds").attribution

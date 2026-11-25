@@ -21,6 +21,10 @@ BUDGET_BYTES = BUDGET_MB * 1024 * 1024
 GENERATED = "generated"
 LICENCES_DIR = "LICENSES"
 README = "README.md"
+ATTRIBUTION_FILE = "ATTRIBUTION.txt"
+# ODbL requires the credit to travel with the data, so builders write it beside
+# each output. It is accepted only there, and only with the registry's wording.
+ATTRIBUTION_LICENCE = "ODbL-1.0"
 
 
 def _is_documentation(relpath: Path) -> bool:
@@ -40,10 +44,29 @@ def audit(data_dir: Path) -> list[str]:
                 "give each dataset its own file."
             )
 
+    # Directory -> attribution strings of the ODbL outputs registered there.
+    notices: dict[Path, set[str]] = {}
+    for info in datasets:
+        if info.licence == ATTRIBUTION_LICENCE:
+            notices.setdefault(Path(info.relpath).parent, set()).add(info.attribution)
+
     present = [p for p in sorted(data_dir.rglob("*")) if p.is_file()]
     for path in present:
         rel = path.relative_to(data_dir)
         if _is_documentation(rel):
+            continue
+        if rel.name == ATTRIBUTION_FILE and rel.parent in notices:
+            expected = notices[rel.parent]
+            if (
+                len(expected) != 1
+                or path.read_text(encoding="utf-8").strip() not in expected
+            ):
+                problems.append(
+                    f"data/{rel.as_posix()} must contain exactly the attribution "
+                    "registered in src/cwai/registry.py for the data beside it. "
+                    "Rebuild the dataset or fix the registry; datasets sharing a "
+                    "directory must share one attribution string."
+                )
             continue
         if rel.as_posix() not in claims:
             problems.append(

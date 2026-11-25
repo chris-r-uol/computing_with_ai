@@ -19,6 +19,14 @@ with the data.
 Features that straddle the bounding box are cut at its edge rather than kept
 whole or dropped, so the files stay small and the network never extends far
 beyond the area named in ``BBOXES``.
+
+Known limitations for graph work
+--------------------------------
+* Cutting at the edge leaves dangling, unconnected endpoints on the boundary.
+* Clipping can turn a road that leaves and re-enters the box into a
+  MultiLineString, which some graph code will not accept as one edge.
+* The OSM ``lines`` layer carries no node IDs, so a graph must be built by
+  snapping coordinates; cut endpoints then become new, isolated nodes.
 """
 
 from __future__ import annotations
@@ -130,6 +138,17 @@ def filter_stations(points: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return kept
 
 
+def _read(pbf: Path, layer: str, bbox: tuple[float, float, float, float]):
+    frame = pyogrio.read_dataframe(pbf, layer=layer, bbox=bbox)
+    if frame.empty:
+        # Say so here: otherwise the tag filters would blame the tags.
+        raise ValueError(
+            f"The {layer!r} layer of {pbf} has no features inside bbox {bbox} "
+            "and so no features to clip. Check the extract covers this place."
+        )
+    return frame
+
+
 def build_network(pbf: Path, place: str, out: Path) -> gpd.GeoDataFrame:
     """Write the ``edges`` and ``stations`` layers for ``place`` to ``out``.
 
@@ -139,8 +158,11 @@ def build_network(pbf: Path, place: str, out: Path) -> gpd.GeoDataFrame:
     if place not in BBOXES:
         raise ValueError(f"Unknown place {place!r}; expected one of {sorted(BBOXES)}.")
     bbox = BBOXES[place]
-    lines = pyogrio.read_dataframe(pbf, layer=_LINES_LAYER)
-    points = pyogrio.read_dataframe(pbf, layer=_POINTS_LAYER)
+    # bbox= makes GDAL read only features intersecting the box, so the whole
+    # Sichuan extract is never held in memory. It selects, it does not cut: the
+    # clip below still trims straddling features.
+    lines = _read(pbf, _LINES_LAYER, bbox)
+    points = _read(pbf, _POINTS_LAYER, bbox)
 
     # Filter before clipping so the error names the tags, then clip; either
     # step raising happens before anything is written.

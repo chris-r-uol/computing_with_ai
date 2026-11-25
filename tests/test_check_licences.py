@@ -101,3 +101,28 @@ def test_written_readme_is_utf8_regardless_of_locale(tmp_path):
     check_licences.write_readme(tmp_path)
     raw = (tmp_path / "README.md").read_bytes()
     assert "©".encode() in raw
+
+
+def _attribution():
+    return registry.get("network-leeds").attribution
+
+
+def test_attribution_beside_odbl_output_is_accepted(tree):
+    (tree / "osm" / "ATTRIBUTION.txt").write_text(
+        _attribution() + "\n", encoding="utf-8"
+    )
+    assert check_licences.audit(tree) == []
+
+
+def test_attribution_with_wrong_content_is_reported(tree):
+    (tree / "osm" / "ATTRIBUTION.txt").write_text("Thanks, OSM!", encoding="utf-8")
+    problems = check_licences.audit(tree)
+    assert any("osm/ATTRIBUTION.txt" in p for p in problems)
+
+
+def test_stray_attribution_elsewhere_is_still_reported(tree):
+    (tree / "stats19" / "ATTRIBUTION.txt").write_text(_attribution(), encoding="utf-8")
+    problems = check_licences.audit(tree)
+    assert any(
+        "stats19/ATTRIBUTION.txt" in p and "not registered" in p for p in problems
+    )
