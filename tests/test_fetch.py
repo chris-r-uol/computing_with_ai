@@ -1,11 +1,11 @@
 import io
 import json
 
-import pytest
-
 import fetch as fetch_module
-from cwai.registry import YEARS
+import pytest
 from fetch import SOURCES, fetch, record_provenance, sha256
+
+from cwai.registry import YEARS
 
 NAME = "collisions-2021"
 
@@ -26,6 +26,7 @@ def _serve(monkeypatch, payload: bytes):
     calls = []
 
     def fake(url, *a, **kw):
+        assert kw.get("timeout"), "urlopen must be given a timeout"
         calls.append(url)
         return _FakeResponse(payload)
 
@@ -45,7 +46,9 @@ def test_sha256_is_stable_and_correct(tmp_path):
     p = tmp_path / "a.txt"
     p.write_bytes(b"hello")
     assert sha256(p) == sha256(p)
-    assert sha256(p) == "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+    assert sha256(p) == (
+        "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+    )
 
 
 def test_fetch_skips_existing_file_without_network(tmp_path, monkeypatch):
@@ -91,7 +94,9 @@ def test_failed_download_leaves_no_file_that_looks_complete(tmp_path, monkeypatc
         def read(self, *a):
             raise OSError("connection dropped")
 
-    monkeypatch.setattr(fetch_module.urllib.request, "urlopen", lambda *a, **k: Boom(b"x"))
+    monkeypatch.setattr(
+        fetch_module.urllib.request, "urlopen", lambda *a, **k: Boom(b"x")
+    )
     with pytest.raises(OSError):
         fetch(NAME, tmp_path)
     assert not (tmp_path / SOURCES[NAME].rsplit("/", 1)[-1]).exists()
@@ -121,3 +126,31 @@ def test_provenance_accumulates_across_calls(tmp_path):
         (tmp_path / name).write_bytes(name.encode())
         record_provenance(tmp_path / name, manifest)
     assert set(json.loads(manifest.read_text())) == {"a.txt", "b.txt"}
+
+
+def test_interrupted_manifest_write_keeps_previous_record(tmp_path, monkeypatch):
+    manifest = tmp_path / "provenance.json"
+    (tmp_path / "a.txt").write_bytes(b"a")
+    record_provenance(tmp_path / "a.txt", manifest)
+    before = manifest.read_text()
+    (tmp_path / "b.txt").write_bytes(b"b")
+
+    def crash(self, target):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(fetch_module.Path, "replace", crash)
+    with pytest.raises(OSError):
+        record_provenance(tmp_path / "b.txt", manifest)
+    assert manifest.read_text() == before
+
+
+def test_skip_path_records_provenance_for_present_unrecorded_file(
+    tmp_path, monkeypatch
+):
+    target = tmp_path / SOURCES[NAME].rsplit("/", 1)[-1]
+    target.write_bytes(b"arrived but never recorded")
+    monkeypatch.setattr(fetch_module.urllib.request, "urlopen", _no_network)
+    fetch(NAME, tmp_path)
+    entry = json.loads((tmp_path / "provenance.json").read_text())[target.name]
+    assert entry["sha256"] == sha256(target)
+    assert entry["url"] == SOURCES[NAME]
