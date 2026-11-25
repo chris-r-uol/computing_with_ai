@@ -1,0 +1,55 @@
+name: checks
+
+# The one list of checks, called by both tests.yml and site.yml's gate. It used
+# to be written out in each of them, and the copies had already drifted: the
+# publish path ran every check except the licence audit, so a direct push to
+# main could publish the registry-generated data page having never audited the
+# data. Add a check here and every path that publishes or merges gets it.
+on:
+  workflow_call:
+    inputs:
+      groups:
+        description: "Dependency groups to install, as uv sync flags."
+        type: string
+        default: "--group dev --group core"
+      publish-gate:
+        description: >-
+          Turn on the checks that only a publication must pass, such as "no TODO
+          is left in the accessibility statement".
+        type: boolean
+        default: false
+      run-notebooks:
+        description: "Also execute every notebook in a fresh kernel."
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      # --locked: fail rather than silently re-resolve, so a pyproject.toml
+      # edit without a matching `uv lock` cannot install versions nobody has
+      # recorded.
+      - run: uv sync --locked ${{ inputs.groups }}
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      # actionlint is a dev dependency; it checks these workflow files.
+      - run: uv run actionlint .github/workflows/*.yml
+      # CWAI_PUBLISH_GATE turns on the "no TODO left in the accessibility
+      # statement" test, so the site cannot deploy while it is unfinished.
+      - run: uv run pytest
+        env:
+          CWAI_PUBLISH_GATE: ${{ inputs.publish-gate && '1' || '' }}
+      # Student notebooks are generated from the full ones; fail if they have drifted.
+      - run: uv run python scripts/build_student_notebooks.py --check
+      - run: uv run python scripts/check_licences.py
+      - if: inputs.run-notebooks
+        run: uv run python scripts/run_notebooks.py notebooks/
