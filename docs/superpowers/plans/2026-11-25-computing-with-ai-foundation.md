@@ -24,7 +24,7 @@
 - Vendored imagery must contain **no identifiable people or vehicle registrations**.
 - Allowed data licences: `OGL-v3.0`, `ODbL-1.0`, `CC-BY-SA-4.0`, `generated`. Any other value fails CI.
 - Attribution strings are fixed copy: OGL sources carry `Contains public sector information licensed under the Open Government Licence v3.0.`; OSM-derived files carry `© OpenStreetMap contributors, licensed under the Open Database License (ODbL).`
-- Study area: **West Yorkshire**. Years: **2018–2023** inclusive.
+- Study area: **West Yorkshire**. Years: **2021–2025** inclusive — the span DfT publishes as per-year STATS19 files. Provisional pending the module lead's decision (see ledger R20/R23); held as the single constant `cwai.registry.YEARS`.
 - Material is in English.
 
 ## Review Focus
@@ -111,7 +111,7 @@ git commit -m "feat: repository scaffolding, devcontainer and cwai package"
   - `UnknownDatasetError(KeyError)`
   - `ALLOWED_LICENCES: frozenset[str]`
   - `data_root() -> Path` — repository `data/` directory.
-  - `AREA = "west-yorkshire"`, `YEARS = (2018, 2019, 2020, 2021, 2022, 2023)` — defined here, not in `scripts/`, because both `cwai.data` and the build scripts need them and the package must not import from `scripts/`.
+  - `AREA = "west-yorkshire"`, `YEARS = (2021, 2022, 2023, 2024, 2025)` — defined here, not in `scripts/`, because both `cwai.data` and the build scripts need them and the package must not import from `scripts/`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -546,12 +546,12 @@ def test_load_collisions_returns_all_years_by_default():
     assert set(load_collisions().accident_year) == set(YEARS)
 
 def test_load_collisions_filters_to_requested_years():
-    assert set(load_collisions(years=[2019]).accident_year) == {2019}
+    assert set(load_collisions(years=[2022]).accident_year) == {2022}
 
 def test_requesting_absent_year_raises_and_lists_available(monkeypatch):
     with pytest.raises(YearNotAvailableError) as exc:
         load_collisions(years=[1999])
-    assert "2018" in str(exc.value) and "1999" in str(exc.value)
+    assert "2021" in str(exc.value) and "1999" in str(exc.value)
 
 def test_requesting_absent_year_does_not_return_empty_frame():
     # guards Review Focus 3: silent empties propagate as zeroes
