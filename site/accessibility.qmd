@@ -75,16 +75,28 @@ tell the module teaching team. Say which page it is and what you were trying to
 do.
 
 ::: {.callout-warning}
-## TODO before publication: add the contact route
+## TODO before publication: name the responsible body, and give a contact
 
-The module lead must name a real contact here (an email address or the course
-repository's issue tracker) and state any response time they are willing to
-commit to. Do not publish this statement until that is done.
+Two things are missing from this statement, and it is incomplete until both are
+supplied. The module lead must:
+
+1. **Name the institution that publishes this site.** The affiliation was taken
+   out of the public pages while the site is being tested. The duty under the
+   UK Public Sector Bodies (Websites and Mobile Applications) Accessibility
+   Regulations 2018 attaches to the body that publishes a site, not to whether
+   the page prints its name, so taking the name out did not remove the
+   obligation: it removed the reader's means of finding out who is answerable
+   for it. Naming the institution again restores the citation of those
+   Regulations, and with it the enforcement route that was removed alongside
+   the name -- the Equality Advisory and Support Service (EASS) in Great
+   Britain, and the Equality Commission for Northern Ireland in Northern
+   Ireland. A page that names nobody cannot honestly send a reader to a
+   regulator, which is why that paragraph is not here now.
+2. **Give a real contact** -- an email address, or the course repository's issue
+   tracker -- and state any response time they are willing to commit to.
+
+Do not publish this statement until both are done.
 :::
-
-If you are not happy with our response and you are in the United Kingdom, you can
-contact the Equality Advisory and Support Service (EASS). In Northern Ireland,
-the Equality Commission for Northern Ireland is responsible for enforcement.
 
 ## Technical information
 
