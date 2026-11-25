@@ -51,7 +51,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SITE = REPO_ROOT / "_site"
 # 640px is a 1280px window at 200% zoom; 320px is 400%, the WCAG 1.4.10 width.
-DEFAULT_WIDTHS = (640, 320)
+#
+# 1280px is here for the contrast half rather than the reflow half. The navbar
+# collapses into a toggle below 992px, so at 640 and 320 its items are
+# `display: none` and the walk below skips them -- which meant the one surface
+# on this site with its own palette, the dark bar, was never measured in a
+# browser at all. Everything the bar carries is visible only at a desktop
+# width, so a desktop width has to be in the run.
+DEFAULT_WIDTHS = (1280, 640, 320)
 VIEWPORT_HEIGHT = 900
 
 # Quarto stores the reader's theme choice under this key: "default" is the

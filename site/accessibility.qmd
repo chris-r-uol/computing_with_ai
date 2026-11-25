@@ -1,5 +1,8 @@
 ---
 title: "Accessibility statement"
+include-before-body:
+  text: |
+    <div class="cwai-eyebrow">Reference</div>
 ---
 
 This statement applies to the Computing with AI course site, the reading copy of
@@ -19,28 +22,40 @@ version of the guidelines that EN 301 549 references at level 2.1 AA.
 - The colour pairs defined in the site's stylesheet meet the AA contrast ratios
   (4.5:1 for text, 3:1 for interface boundaries and focus indicators) in both
   the light and the dark theme. We also measured every piece of visible text on
-  every page, in both themes and at two window widths, against the colour
+  every page, in both themes and at three window widths, against the colour
   actually painted behind it rather than against the colour the stylesheet
-  declares: 1,708 measurements, the lowest of them 4.57:1, and none below the
-  ratio that applies to it. You can switch theme with the toggle on each page.
+  declares: 2,958 measurements, the lowest of them 4.57:1, and none below
+  the ratio that applies to it. You can switch theme with the toggle on each
+  page.
 - On the home page, every link, button and the search box can be reached with
-  the Tab key in an order that follows the page, and each shows the same
-  visible focus indicator: a 3 pixel ring with a 2 pixel gap, measured at no
-  less than 7.4:1 in the light theme and 11.4:1 in the dark one against the
-  grounds it appears on. A "skip to main content" link is the first stop, and
-  no stop was off the screen. Other pages use the same layout and components
-  but we have not walked them one by one.
+  the Tab key in an order that follows the page, and each shows a visible focus
+  indicator: a 3 pixel ring with a 2 pixel gap. The ring is amber throughout.
+  On the page it measures no less than 7.4:1 in the light theme and 11.4:1 in
+  the dark one against the grounds it appears on; on the dark bar across the
+  top it is a lighter amber, because the page's amber is only 2.1:1 there, and
+  it measures 11.4:1 in the light theme and 13.1:1 in the dark one. A "skip to
+  main content" link is the first stop, and no stop was off the screen. Other
+  pages use the same layout and components but we have not walked them one by
+  one.
 - Links in the body text are underlined as well as coloured, so colour is not the
-  only cue.
-- We checked the heading levels on every page and none skips a level. Pages that
-  have section headings also have an in-page contents list; short pages without
-  section headings do not.
+  only cue. In the bar across the top of every page, the part of the course you
+  are currently in is marked by a heavier weight and a short underline as well
+  as by colour, and the same thing is written out in words above the page
+  title, so it does not depend on the marking being seen.
+- We checked the heading levels on every page and none skips a level. The pages
+  that are mainly reading -- the notebooks, the data page and this statement --
+  carry an in-page contents list beside the text. The home page and the six
+  stage pages do not, because those pages are a short list of cards and a
+  contents list beside them would only repeat the cards; the glossary does
+  not, because it is one table with no section headings to list.
 - Every notebook is published as an ordinary web page of text, code and output,
   not as an image or an embedded viewer.
 - We measured the width of every page, with the browser window set to 640
   pixels wide (as a 1280 pixel window at 200% zoom would be) and to 320 pixels
-  (400%), in both themes, and none needs sideways scrolling. This was a
-  window-width emulation, not real browser zoom. Code blocks and code output
+  (400%), in both themes, and none needs sideways scrolling. The same
+  measurement was also taken at 1280 pixels, which is where the navigation bar
+  shows every part of the course rather than collapsing behind a button. This
+  was a window-width emulation, not real browser zoom. Code blocks and code output
   are not counted, because they scroll inside their own box. Everything else is
   counted: the glossary's three columns wrap at 320 pixels instead of becoming a
   strip that scrolls sideways, and a long URL or file path written in the text
@@ -52,7 +67,7 @@ This is our current position, and we will update it as the site changes.
 
 - **Not yet independently audited, and testing so far is limited.** On
   25 November 2026 we measured colour contrast and reflow on all eleven pages,
-  in both themes and at both 640 and 320 pixels, and walked the home page with
+  in both themes and at 1280, 640 and 320 pixels, and walked the home page with
   the Tab key in both themes, all in one Chromium-based browser. The
   measurements were taken by a script that runs inside the page, and that
   script is in the course repository (`scripts/audit_site_a11y.py`), so the
@@ -61,10 +76,11 @@ This is our current position, and we will update it as the site changes.
   components), did not test text-only zoom, other browsers, or any screen
   reader, and did not run a full audit with assistive technology. We therefore
   describe the site as partially compliant.
-- **Stage pages.** Every stage is listed in the sidebar, but the stages that
-  have no published notebooks yet are listed without being linked: their names
-  render as plain text rather than as links. Their landing pages can still be
-  reached through the previous and next links at the foot of the page.
+- **Stages with no notebooks yet.** Every stage is a link in the bar at the top
+  of every page, and every stage page can be reached from the home page. Most
+  of them say that no notebooks have been published for that stage yet,
+  because none have been. This is the state of the material, not a fault in
+  the page.
 - **Charts and images in notebooks** (WCAG 1.1.1 Non-text Content). A figure
   produced by code may not have a text description. Where a figure carries
   information, the surrounding text or the code that draws it is meant to give
