@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import geopandas as gpd
+import numpy as np
 import pytest
 from build_subsets import (
     build_casualties,
@@ -12,6 +13,7 @@ from shapely.geometry import LineString, Point
 
 from cwai import registry
 from cwai.data import (
+    _BUILD_HINTS,
     MissingDataError,
     YearNotAvailableError,
     available_years,
@@ -132,6 +134,8 @@ def test_missing_file_raises_actionable_message(tmp_path, monkeypatch):
     msg = str(exc.value)
     assert "collisions" in msg
     assert "scripts/build_subsets.py" in msg
+    # The student is told to ask their tutor, not to run a script themselves.
+    assert "ask them" in msg and "scripts/fetch.py" in msg
 
 
 def test_missing_error_is_a_file_not_found_error(tmp_path, monkeypatch):
@@ -204,9 +208,28 @@ def test_describe_counts_network_edges(tree):
 def test_describe_still_works_when_data_not_built(tmp_path, monkeypatch):
     monkeypatch.setattr(registry, "data_root", lambda: tmp_path)
     text = describe("collisions")
-    assert "not been built" in text and "Open Government Licence" in text
+    assert "ask your tutor" in text and "Open Government Licence" in text
+    assert "scripts/" not in text
 
 
 def test_describe_unknown_key_lists_datasets():
     with pytest.raises(registry.UnknownDatasetError):
         describe("nope")
+
+
+def test_every_registry_dataset_has_a_build_hint():
+    # A missing hint would raise KeyError inside the error handler itself.
+    assert set(_BUILD_HINTS) == set(registry.REGISTRY)
+
+
+def test_numpy_integer_year_is_accepted(tree):
+    year = load_collisions().accident_year.max()
+    assert isinstance(year, np.integer)
+    assert set(load_collisions(years=year).accident_year) == {int(year)}
+
+
+def test_string_year_raises_plain_type_error(tree):
+    with pytest.raises(TypeError) as exc:
+        load_collisions(years="2022")
+    msg = str(exc.value)
+    assert "'2022'" in msg and "whole numbers" in msg

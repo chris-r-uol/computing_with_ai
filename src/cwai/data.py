@@ -9,6 +9,7 @@ a traceback, so each one says what is wrong and what to do next.
 
 from __future__ import annotations
 
+import numbers
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -74,11 +75,12 @@ def _require(key: str) -> Path:
     path = _path(key)
     if not path.is_file():
         raise MissingDataError(
-            f"The {info.title} dataset ('{key}') has not been built on this "
-            f"computer yet, so there is nothing to load. Expected to find it at "
-            f"{path}. To create it, run {_BUILD_HINTS[key]}. "
-            f"If you did not expect to see this "
-            f"message, ask your tutor: your data folder may be incomplete."
+            f"The {info.title} dataset ('{key}') is not on this computer, so "
+            f"there is nothing to load. Expected to find it at {path}. This "
+            f"file is made ahead of time by your tutor, not by you, so please "
+            f"ask them: your data folder is incomplete. (For the tutor: it is "
+            f"built by {_BUILD_HINTS[key]}, which needs the raw downloads "
+            f"from scripts/fetch.py first.)"
         )
     return path
 
@@ -99,11 +101,20 @@ def _year_column(key: str) -> str:
 
 
 def _as_list(years: Sequence[int] | int) -> list[int]:
-    # years=2022 is an easy slip; accept it rather than fail on iterating an int.
-    return [years] if isinstance(years, int) else list(years)
+    # years=2022 and years=df.accident_year.max() are easy, sensible calls:
+    # accept a single integer (numpy ones too) as well as a list of them.
+    if isinstance(years, numbers.Integral):
+        return [int(years)]
+    if isinstance(years, str | bytes):
+        raise TypeError(
+            f"years must be whole numbers such as 2022 or [2021, 2022], but "
+            f"you passed the text {years!r}. Remove the quote marks around "
+            f"the year."
+        )
+    return [int(y) for y in years]
 
 
-def _load_by_year(key: str, years: Sequence[int] | None) -> pd.DataFrame:
+def _load_by_year(key: str, years: Sequence[int] | int | None) -> pd.DataFrame:
     df = _read(key)
     if years is None:
         return df
@@ -127,22 +138,22 @@ def _load_by_year(key: str, years: Sequence[int] | None) -> pd.DataFrame:
     return df[df[column].isin(wanted)].reset_index(drop=True)
 
 
-def load_collisions(years: Sequence[int] | None = None) -> pd.DataFrame:
+def load_collisions(years: Sequence[int] | int | None = None) -> pd.DataFrame:
     """STATS19 collisions, one row each, optionally for chosen years."""
     return _load_by_year("collisions", years)
 
 
-def load_casualties(years: Sequence[int] | None = None) -> pd.DataFrame:
+def load_casualties(years: Sequence[int] | int | None = None) -> pd.DataFrame:
     """STATS19 casualties, one row per injured person, optionally by year."""
     return _load_by_year("casualties", years)
 
 
-def load_vehicles(years: Sequence[int] | None = None) -> pd.DataFrame:
+def load_vehicles(years: Sequence[int] | int | None = None) -> pd.DataFrame:
     """STATS19 vehicles, one row per vehicle, optionally by year."""
     return _load_by_year("vehicles", years)
 
 
-def load_traffic_counts(years: Sequence[int] | None = None) -> pd.DataFrame:
+def load_traffic_counts(years: Sequence[int] | int | None = None) -> pd.DataFrame:
     """DfT AADF traffic counts, optionally for chosen years."""
     return _load_by_year("traffic-counts", years)
 
@@ -202,8 +213,8 @@ def describe(key: str) -> str:
         size += "."
     else:
         size = (
-            f"It has not been built on this computer yet; run "
-            f"{_BUILD_HINTS[key]} to create it."
+            "Its file is not on this computer yet, so it cannot be loaded; "
+            "ask your tutor, as your data folder is incomplete."
         )
     return (
         f"{info.title} ('{key}')\n\n"
