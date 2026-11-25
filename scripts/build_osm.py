@@ -1,13 +1,15 @@
 """Cut Geofabrik OpenStreetMap extracts down to small central road networks.
 
 OpenStreetMap is the only open source of transport data about Chengdu, so both
-cities are built the same way. The expected source files are the Geofabrik
-regional extracts, downloaded by hand (the module lead authorises this) into
-``raw/``:
+cities are built the same way. The source files are the Geofabrik regional
+extracts, registered in ``scripts/fetch.py`` as the ``west-yorkshire`` and
+``sichuan`` sources and downloaded into ``raw/`` by::
 
-* Leeds:    https://download.geofabrik.de/europe/great-britain/england/west-yorkshire-latest.osm.pbf
-* Chengdu:  https://download.geofabrik.de/asia/china/sichuan-latest.osm.pbf
-  (Geofabrik publishes China by province; Chengdu is in Sichuan.)
+    uv run python scripts/fetch.py west-yorkshire sichuan
+
+They are 164 MB between them, which is why they are named rather than fetched
+with everything else. (Geofabrik publishes China by province, and Chengdu is in
+Sichuan; there is no smaller extract for either city.)
 
 Run ``python scripts/build_osm.py leeds raw/west-yorkshire-latest.osm.pbf``
 (or ``chengdu raw/sichuan-latest.osm.pbf``). Output paths come from

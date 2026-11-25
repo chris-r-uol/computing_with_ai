@@ -3,11 +3,12 @@ import json
 
 import fetch as fetch_module
 import pytest
-from fetch import SOURCES, fetch, record_provenance, sha256
+from fetch import SOURCES, fetch, main, record_provenance, sha256
 
 from cwai.registry import YEARS
 
 NAME = "collisions-2021"
+OSM_NAMES = ("west-yorkshire", "sichuan")
 
 
 def _no_network(*args, **kwargs):
@@ -40,6 +41,76 @@ def test_sources_cover_study_years_for_each_stats19_table():
             assert f"{table}-{year}" in SOURCES
     assert "aadf" in SOURCES
     assert all(u.startswith("https://") for u in SOURCES.values())
+
+
+def test_sources_cover_the_osm_extracts_build_osm_needs():
+    # Fetched by hand once, which left them with no provenance entry and no
+    # timeout; scripts/build_osm.py's docstring names these two keys.
+    for name in OSM_NAMES:
+        assert SOURCES[name].endswith("-latest.osm.pbf")
+
+
+@pytest.fixture
+def raw_in(tmp_path, monkeypatch):
+    """Point raw_root() at a temporary directory."""
+    monkeypatch.setattr(fetch_module.registry, "data_root", lambda: tmp_path / "data")
+    return tmp_path / "raw"
+
+
+def test_main_fetches_every_source_by_default(raw_in, monkeypatch, capsys):
+    calls = _serve(monkeypatch, b"payload")
+    assert main([]) == 0
+    assert len(calls) == len(SOURCES)
+    out = capsys.readouterr().out
+    assert "total" in out
+    assert out.count(" MB") == len(SOURCES) + 1  # one per file, plus the total
+
+
+def test_main_fetches_only_the_named_sources(raw_in, monkeypatch, capsys):
+    # The .pbf extracts are 164 MB; refreshing one CSV must not pull them.
+    calls = _serve(monkeypatch, b"payload")
+    assert main([NAME]) == 0
+    assert calls == [SOURCES[NAME]]
+    assert "west-yorkshire" not in capsys.readouterr().out
+
+
+def test_main_passes_force_through(raw_in, monkeypatch):
+    _serve(monkeypatch, b"old")
+    main([NAME])
+    calls = _serve(monkeypatch, b"new")
+    assert main(["--force", NAME]) == 0
+    assert calls == [SOURCES[NAME]]
+    assert (raw_in / SOURCES[NAME].rsplit("/", 1)[-1]).read_bytes() == b"new"
+
+
+def test_main_without_force_touches_no_network_for_present_files(raw_in, monkeypatch):
+    _serve(monkeypatch, b"payload")
+    main([NAME])
+    monkeypatch.setattr(fetch_module.urllib.request, "urlopen", _no_network)
+    assert main([NAME]) == 0
+
+
+def test_main_rejects_an_unknown_name_without_fetching(raw_in, monkeypatch, capsys):
+    monkeypatch.setattr(fetch_module.urllib.request, "urlopen", _no_network)
+    assert main(["collisions-1066"]) == 2
+    err = capsys.readouterr().err
+    assert "collisions-1066" in err
+    assert NAME in err  # the available names are listed
+
+
+def test_main_rejects_an_unknown_flag(raw_in, monkeypatch, capsys):
+    monkeypatch.setattr(fetch_module.urllib.request, "urlopen", _no_network)
+    assert main(["--all"]) == 2
+    assert "--all" in capsys.readouterr().err
+
+
+def test_main_list_prints_names_and_urls_without_fetching(raw_in, monkeypatch, capsys):
+    monkeypatch.setattr(fetch_module.urllib.request, "urlopen", _no_network)
+    assert main(["--list"]) == 0
+    out = capsys.readouterr().out
+    for name, url in SOURCES.items():
+        assert name in out and url in out
+    assert not raw_in.exists()
 
 
 def test_sha256_is_stable_and_correct(tmp_path):

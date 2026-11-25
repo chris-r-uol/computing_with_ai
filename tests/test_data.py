@@ -137,7 +137,7 @@ def test_missing_file_raises_actionable_message(tmp_path, monkeypatch):
     # The student is told to ask their tutor, not to run a script themselves.
     assert "ask them" in msg
     assert "built by scripts/build_subsets.py" in msg
-    assert "raw downloads from scripts/fetch.py" in msg
+    assert "raw CSVs" in msg and "scripts/fetch.py" in msg
 
 
 def test_missing_error_is_a_file_not_found_error(tmp_path, monkeypatch):
@@ -237,13 +237,15 @@ def test_string_year_raises_plain_type_error(tree):
     assert "'2022'" in msg and "whole numbers" in msg
 
 
-def test_network_missing_message_says_pbf_not_fetch(tmp_path, monkeypatch):
+def test_network_missing_message_names_the_pbf_sources(tmp_path, monkeypatch):
     monkeypatch.setattr(registry, "data_root", lambda: tmp_path)
     with pytest.raises(MissingDataError) as exc:
         load_network("leeds")
     msg = str(exc.value)
-    assert "Geofabrik .pbf" in msg and "does not download" in msg
-    assert "raw downloads" not in msg
+    # The network hint names the two .pbf sources, not the STATS19 CSVs.
+    assert "Geofabrik .pbf" in msg
+    assert "fetch.py west-yorkshire sichuan" in msg
+    assert "raw CSVs" not in msg
 
 
 def test_sensor_missing_message_says_no_downloads_needed(tmp_path, monkeypatch):
