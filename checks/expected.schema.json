@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Self-check expected answers",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["type", "value"],
+    "additionalProperties": false,
+    "properties": {
+      "type": {"enum": ["number", "string", "list", "shape"]},
+      "value": {},
+      "tolerance": {"type": "number", "minimum": 0}
+    }
+  }
+}

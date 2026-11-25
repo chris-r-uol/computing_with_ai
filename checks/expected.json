@@ -1,0 +1,4 @@
+{
+  "demo-number": {"type": "number", "value": 42},
+  "demo-float": {"type": "number", "value": 0.3, "tolerance": 1e-6}
+}
