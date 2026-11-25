@@ -1,0 +1,11 @@
+# Downloaded source data, never committed
+raw/
+
+.venv/
+_site/
+.quarto/
+**/.ipynb_checkpoints
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
