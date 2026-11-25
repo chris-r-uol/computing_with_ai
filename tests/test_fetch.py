@@ -53,7 +53,7 @@ def test_sources_cover_the_osm_extracts_build_osm_needs():
 @pytest.fixture
 def raw_in(tmp_path, monkeypatch):
     """Point raw_root() at a temporary directory."""
-    monkeypatch.setattr(fetch_module.registry, "data_root", lambda: tmp_path / "data")
+    monkeypatch.setattr(fetch_module.registry, "repo_root", lambda: tmp_path)
     return tmp_path / "raw"
 
 

@@ -46,7 +46,14 @@ def lay_out(tmp_path, nb, hints):
 def test_every_exercise_has_nudge_and_method():
     # A gate for the future: today's notebooks have no exercises, so the cases
     # below are what actually exercise the pass and fail paths.
-    for nb_path in REPO.glob("notebooks/**/*.ipynb"):
+    paths = [
+        p
+        for p in REPO.glob("notebooks/**/*.ipynb")
+        if ".ipynb_checkpoints" not in p.parts
+    ]
+    # Without this, renaming notebooks/ makes the constraint silently vacuous.
+    assert paths, "found no notebooks under notebooks/"
+    for nb_path in paths:
         check_notebook_hints(nb_path)
 
 

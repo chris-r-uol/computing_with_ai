@@ -69,6 +69,28 @@ stub; never edit the generated copies in `student/`.
 
 Ids must be unique within a notebook, and should stay stable once released.
 
+## Two things that will catch you out
+
+**Give every cell in a source notebook a stable cell id.** Jupyter and
+`nbformat` will invent one when a cell has none, and a different one each time,
+so a notebook saved by two different tools produces a different `student/` copy
+from identical content. The `--check` run in CI then fails with a diff nobody
+can explain. Set the ids deliberately (nbformat 4.5 `"id"` on each cell) and
+leave them alone afterwards; an id is also what a hint entry's exercise id is
+matched against, so changing one breaks the link to its hints.
+
+**`ruff format` rewrites `.ipynb` files**, and it is a CI gate, so the
+formatter may change the code inside a source notebook. Run it *before*
+regenerating the student copies:
+
+```sh
+uv run ruff format .
+uv run python scripts/build_student_notebooks.py
+```
+
+The other order leaves `student/` built from the unformatted notebooks, and
+`build_student_notebooks.py --check` fails in CI.
+
 ## What CI checks
 
 - every exercise has a non-blank `nudge` and `method`;

@@ -6,6 +6,9 @@
       "version": "3.12"
     }
   },
+  "remoteEnv": {
+    "PATH": "${containerEnv:HOME}/.local/bin:${containerEnv:PATH}"
+  },
   "hostRequirements": {
     "cpus": 2,
     "memory": "8gb"

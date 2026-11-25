@@ -6,6 +6,7 @@ from pathlib import Path
 
 import nbformat
 import pytest
+import yaml
 from build_student_notebooks import (
     EXERCISE_TAG,
     SOLUTION_MARKER,
@@ -13,7 +14,7 @@ from build_student_notebooks import (
     build,
     wrap_solution,
 )
-from render_site import SITE_OUT, render
+from render_site import SITE_OUT, STAGE_DIRS, render
 
 from cwai import registry
 
@@ -206,6 +207,9 @@ def test_headings_never_skip_a_level(site):
         if "site_libs" in page.parts:
             continue
         html = page.read_text()
+        # Without this, find() returns -1 on a page with no <main>, the slice
+        # examines one character, and the page passes having been unchecked.
+        assert "<main" in html, page
         levels = [
             int(n) for n in re.findall(r"<h([1-6])[ >]", html[html.find("<main") :])
         ]
@@ -216,3 +220,54 @@ def test_headings_never_skip_a_level(site):
 def test_long_links_wrap_for_reflow():
     css = (SITE_SRC / "styles.css").read_text()
     assert "overflow-wrap: anywhere" in css
+
+
+# Bootstrap is themed by the SCSS files, the course's own rules by the CSS
+# tokens, and the contrast test above reads only the CSS. So a token changed in
+# one place and forgotten in the other leaves that test green while Bootstrap
+# renders the old colour, under a published conformance statement. Every SCSS
+# variable must therefore name the token it mirrors.
+SCSS_TO_TOKEN = {
+    "body-bg": "bg",
+    "body-color": "fg",
+    "link-color": "link",
+    "code-color": "code-fg",
+    "code-bg": "code-bg",
+    "navbar-bg": "bg",
+}
+
+
+@pytest.mark.parametrize(
+    ("scss_name", "selector"),
+    [("theme-light.scss", ":root"), ("theme-dark.scss", "body.quarto-dark")],
+)
+def test_scss_theme_values_match_the_css_tokens(scss_name, selector):
+    tokens = _tokens((SITE_SRC / "styles.css").read_text(), selector)
+    scss = dict(
+        re.findall(
+            r"\$([\w-]+):\s*(#[0-9a-fA-F]{6})", (SITE_SRC / scss_name).read_text()
+        )
+    )
+    assert scss, scss_name
+    for name, value in scss.items():
+        assert name in SCSS_TO_TOKEN, (
+            f"{scss_name} sets ${name}, which maps to no --cwai-* token. "
+            "Add it to SCSS_TO_TOKEN, or drop it from the theme."
+        )
+        token = SCSS_TO_TOKEN[name]
+        assert value.lower() == tokens[token].lower(), (
+            f"{scss_name}: ${name} is {value} but --cwai-{token} is "
+            f"{tokens[token]}; the contrast test only reads the CSS."
+        )
+
+
+def test_every_stage_directory_has_a_sidebar_section():
+    """STAGE_DIRS and the Quarto sidebar are two lists that must stay in step."""
+    config = yaml.safe_load((SITE_SRC / "_quarto.yml").read_text())
+    hrefs = {
+        entry.get("href")
+        for entry in config["website"]["sidebar"]["contents"]
+        if isinstance(entry, dict)
+    }
+    for stage in STAGE_DIRS:
+        assert f"notebooks/{stage}/index.qmd" in hrefs, stage

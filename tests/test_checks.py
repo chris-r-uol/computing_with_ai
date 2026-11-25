@@ -141,19 +141,30 @@ def test_checks_readme_states_the_comparison_contract():
         assert required in text, required
 
 
-def test_committed_clean_data_matches_regenerated(tmp_path):
+@pytest.mark.parametrize("key", ["sensor-clean", "sensor-faulty"])
+def test_committed_synthetic_data_matches_regenerated(tmp_path, key):
     """Drift guard: a numpy/pyarrow upgrade must not silently change the data
     that students' stored answers were computed from.
+
+    Both files, not just the clean one: ``sensor-faulty`` is the artefact whose
+    planted faults the lessons depend on, so a generator whose random stream
+    moved would move the faults the exercises point at.
 
     Compares decoded frame contents exactly (not file bytes), so harmless
     Parquet metadata differences cannot cause false alarms while any change in
     a value, dtype or column does.
     """
-    relpath = registry.get("sensor-clean").relpath
+    relpath = registry.get(key).relpath
     write_all(tmp_path)
     committed = pd.read_parquet(registry.data_root() / relpath)
     regenerated = pd.read_parquet(tmp_path / relpath)
     pd.testing.assert_frame_equal(regenerated, committed, check_exact=True)
+
+
+def test_committed_clean_data_matches_the_generator_called_directly(tmp_path):
+    committed = pd.read_parquet(
+        registry.data_root() / registry.get("sensor-clean").relpath
+    )
     pd.testing.assert_frame_equal(make_sensor_series(), committed, check_exact=True)
 
 
