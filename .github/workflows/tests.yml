@@ -2,7 +2,16 @@ name: tests
 
 on:
   push:
+    branches: [main, foundation]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   tests:
@@ -11,6 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - run: uv sync --group dev --group core
       - run: uv run ruff check .
       - run: uv run ruff format --check .

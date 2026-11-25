@@ -12,3 +12,20 @@ at least 2 cores and 8 GB of memory.
 
 **Local installation is unsupported.** Please open the repository in a
 Codespace rather than setting up Python on your own machine.
+
+## Maintenance
+
+CI has two workflows. `tests` runs lint, unit tests and the licence audit.
+`notebooks` executes every notebook in a fresh kernel, on every push and pull
+request and **weekly on Mondays**; the weekly run is what catches a dependency
+drifting under material nobody has touched.
+
+**GitHub automatically disables scheduled workflows in a public repository after
+about 60 days without repository activity.** That is exactly the situation the
+weekly run exists for, so check the Actions tab now and then. If the schedule has
+been disabled, re-enable it there (Actions, `notebooks`, Enable workflow), or run
+it by hand with "Run workflow" (both workflows support `workflow_dispatch`). Any
+commit to the repository also resets the clock.
+
+The licence audit runs with `--allow-missing` while the real datasets are not yet
+vendored; remove that flag in `.github/workflows/tests.yml` once they are.

@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 import pytest
@@ -23,8 +24,26 @@ def test_broken_notebook_is_reported_not_raised():
     assert "NameError" in result.error
 
 
-def test_notebook_depending_on_earlier_state_fails_in_isolation():
-    # A fresh kernel must expose the hidden dependency.
+def _write(path, source):
+    import nbformat
+
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [nbformat.v4.new_code_cell(source)]
+    nbformat.write(nb, path)
+
+
+def test_notebook_depending_on_earlier_state_fails_in_isolation(tmp_path):
+    # The first notebook defines the name and runs first (sorted order). If the
+    # kernel were shared, the second would find it and pass. It must not.
+    _write(tmp_path / "a_defines.ipynb", "earlier_result = 41")
+    _write(tmp_path / "b_uses.ipynb", "print(earlier_result + 1)")
+    results = {r.path.name: r for r in run_all(tmp_path)}
+    assert results["a_defines.ipynb"].passed
+    assert not results["b_uses.ipynb"].passed
+    assert "earlier_result" in results["b_uses.ipynb"].error
+
+
+def test_fixture_depending_on_earlier_state_fails():
     result = run(FIXTURES / "depends_on_earlier.ipynb")
     assert not result.passed
     assert "earlier_result" in result.error
@@ -78,8 +97,11 @@ def test_main_exits_non_zero_when_any_notebook_fails(capsys):
     assert "FAIL" in capsys.readouterr().out
 
 
-def test_main_exits_zero_when_all_pass(capsys):
-    assert main([str(REPO / "notebooks")]) == 0
+def test_main_exits_zero_when_all_pass(tmp_path, capsys):
+    # Only the smoke notebook, so pytest stays independent of course content
+    # (later notebooks may need the optional deep-learning group).
+    shutil.copy(REPO / "notebooks/01-foundations/00-smoke.ipynb", tmp_path)
+    assert main([str(tmp_path)]) == 0
     assert "PASS" in capsys.readouterr().out
 
 

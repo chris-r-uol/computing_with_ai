@@ -374,6 +374,7 @@ core = [
 ]
 dev = [
     { name = "actionlint-py" },
+    { name = "ipykernel" },
     { name = "jsonschema" },
     { name = "nbclient" },
     { name = "nbformat" },
@@ -399,6 +400,7 @@ core = [
 ]
 dev = [
     { name = "actionlint-py" },
+    { name = "ipykernel" },
     { name = "jsonschema" },
     { name = "nbclient" },
     { name = "nbformat" },
