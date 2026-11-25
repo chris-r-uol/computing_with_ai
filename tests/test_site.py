@@ -185,14 +185,15 @@ PAIRS = [
     ("link", "surface", 4.5),
     ("code-fg", "code-bg", 4.5),
     ("link", "code-bg", 4.5),
-    ("fg", "callout-bg", 4.5),
-    ("link", "callout-bg", 4.5),
     # The accent tint carries the "Choose this if ..." lines, the current
     # sidebar item and the table headers, all of which hold body-sized text.
     ("fg", "accent-soft", 4.5),
     ("link", "accent-soft", 4.5),
-    # Text on a filled accent block.
-    ("accent-fg", "accent", 4.5),
+    # No ("accent-fg", "accent") pair, and no --cwai-callout-bg pairs: both
+    # tokens were declared and measured while nothing painted them. The callout
+    # body is --cwai-surface and no filled accent block carries text, so those
+    # three entries measured colours the site never showed. The tokens are
+    # gone; test_every_palette_token_is_painted_by_something keeps them gone.
     ("border", "bg", 3.0),
     ("border", "surface", 3.0),
     ("border", "accent-soft", 3.0),
@@ -217,6 +218,27 @@ def test_accessibility_statement_makes_no_response_time_promise():
     assert "working days" not in (SITE_SRC / "accessibility.qmd").read_text()
 
 
+def test_statement_never_sends_a_reader_to_a_regulator_it_names_no_duty_for():
+    """EASS and ECNI are the route created by the 2018 Regulations.
+
+    The statement once told a reader to escalate to them while citing no
+    Regulations and naming no responsible body, which is a statement
+    contradicting itself: it pointed at the enforcer of a duty it did not
+    assert, on behalf of nobody it was willing to name. Either both are present
+    or neither is.
+    """
+    # Whitespace-normalised: the citation is long enough to be wrapped across
+    # two source lines, and was, which a plain substring search would miss.
+    text = " ".join((SITE_SRC / "accessibility.qmd").read_text().split())
+    names_a_regulator = "Equality Advisory" in text or "Equality Commission" in text
+    cites_the_regulations = "Accessibility Regulations 2018" in text
+    assert cites_the_regulations or not names_a_regulator, (
+        "the statement names an enforcement body but cites no Regulations and "
+        "so asserts no duty; name the responsible institution or drop the "
+        "enforcement route"
+    )
+
+
 # Read the gate with .get() truthiness, never `"CWAI_PUBLISH_GATE" in
 # os.environ`: checks.yml sets the variable to an empty string on every caller
 # that is not publishing, so an `in` check would arm the gate on every pull
@@ -226,11 +248,58 @@ def test_accessibility_statement_makes_no_response_time_promise():
     reason="publication gate: only enforced by the site workflow",
 )
 def test_accessibility_statement_is_ready_to_publish():
-    """Fails while the contact TODO remains, so a green site build means it is done."""
+    """Fails while the TODO remains, so a green site build means it is done.
+
+    The TODO names two missing pieces, and the second is the reason this gate
+    exists rather than a note in a tracker: with the institution unnamed, the
+    statement cites no Regulations and offers no enforcement route, so a reader
+    cannot find out who owes the duty. A placeholder that quietly drops a
+    statutory citation is exactly what gets forgotten on a public repository.
+    """
     text = (SITE_SRC / "accessibility.qmd").read_text()
     assert "TODO" not in text, (
-        "add the accessibility contact route, then remove the TODO"
+        "name the responsible institution (which restores the Accessibility "
+        "Regulations citation and the EASS/ECNI enforcement route) and add the "
+        "contact route, then remove the TODO"
     )
+
+
+def test_the_statement_names_a_measuring_script_and_it_is_committed():
+    """The statement publishes numbers, so what produced them must be here.
+
+    Those numbers were first taken with a script typed into a browser session,
+    which left them unreproducible -- and this statement had already been
+    returned three times for claiming more than had been measured. The script
+    is committed; this keeps the citation and the file from parting company.
+    """
+    statement = (SITE_SRC / "accessibility.qmd").read_text()
+    cited = re.findall(r"scripts/[\w./-]+\.py", statement)
+    assert cited, "the statement cites no script for the numbers it publishes"
+    for script in cited:
+        assert (REPO / script).exists(), script
+
+
+def test_the_audit_script_imports_without_a_browser_and_skips_quartos_libraries(
+    tmp_path,
+):
+    """It is deliberately not a test dependency, so it must import without one.
+
+    playwright is imported inside ``audit()``, not at the top of the module:
+    the script needs a browser binary, which is why it is run by hand rather
+    than in CI. ``pages_of`` is the part worth testing here -- Quarto writes
+    HTML into site_libs/ that is nobody's page.
+    """
+    from audit_site_a11y import pages_of
+
+    (tmp_path / "site_libs" / "bootstrap").mkdir(parents=True)
+    (tmp_path / "site_libs" / "bootstrap" / "x.html").write_text("")
+    (tmp_path / "notebooks").mkdir()
+    for page in ("index.html", "notebooks/a.html"):
+        (tmp_path / page).write_text("")
+    assert [p.relative_to(tmp_path).as_posix() for p in pages_of(tmp_path)] == [
+        "index.html",
+        "notebooks/a.html",
+    ]
 
 
 def test_headings_never_skip_a_level(site):
@@ -248,9 +317,18 @@ def test_headings_never_skip_a_level(site):
             assert after <= before + 1, f"{page}: h{before} then h{after}"
 
 
-def test_long_links_wrap_for_reflow():
+def test_long_links_and_inline_code_wrap_for_reflow():
+    """Both halves are needed, and the second was missing for a while.
+
+    ``overflow-wrap: anywhere`` cannot break pre-formatted text, and Quarto's
+    stylesheet sets ``white-space: pre`` on every ``code``. So inline code took
+    no wrap at all until the second rule arrived, and a path written in the
+    prose pushed a 320px page to 345px. Code blocks keep ``pre`` deliberately.
+    """
     css = (SITE_SRC / "styles.css").read_text()
     assert "overflow-wrap: anywhere" in css
+    assert "main :not(pre) > code" in css
+    assert "white-space: pre-wrap" in css
 
 
 # Bootstrap is themed by the SCSS files, the course's own rules by the CSS
@@ -326,6 +404,100 @@ def test_generated_stylesheet_is_committed_and_loaded_after_the_tokens():
     assert css == ["styles.css", "tailwind.css"], css
 
 
+# Every check around the generated stylesheet is a check on a *relation*: that
+# it matches its source (build_tailwind.py --check), that it is loaded in the
+# right order, that it names no colour of its own, that its utilities are
+# prefixed. An empty site/_tailwind/input.css satisfies all of them -- nothing
+# rebuilds to nothing, an empty file holds no hex literal, and the empty set
+# collides with no Bootstrap class. Three of the four 320px reflow fixes and
+# the WCAG 1.4.1 link underline live only in this generated file, so "it
+# matches its source" is worth nothing unless something asserts the source
+# still says anything. These are the declarations that would be silently lost.
+LOAD_BEARING_CSS = [
+    ("the route cards on the home page", ".cwai-routes"),
+    ('each route card\'s "Choose this if ..." panel', ".route-when"),
+    ("the current entry in the in-page contents list", "#TOC a.nav-link.active"),
+    ("the accent rule under every section heading", "main.content h2::after"),
+    # WCAG 1.4.10. Each was found by measuring a 320px window, not by reading
+    # the CSS, and each is the difference between a reachable search button and
+    # one carried off the right-hand edge.
+    ("reflow: the content column may shrink", "main.content {\n  min-width: 0;\n}"),
+    ("reflow: the breadcrumb may wrap", "#quarto-header nav.quarto-page-breadcrumbs,"),
+    (
+        "reflow: previous/next may shrink",
+        "nav.page-navigation .nav-page {\n  min-width: 0;\n}",
+    ),
+    # WCAG 1.4.1: body links carry an underline, so colour is not the only cue.
+    ("body links are underlined", "text-underline-offset: 0.15em;"),
+]
+
+# The accent is the site's one line colour, used by the title rule, the heading
+# rules, the route bullets, the current sidebar item and the focus ring's
+# neighbours. A build that painted it once or twice has lost most of the design
+# layer; the floor is well under the real count (9 at the time of writing) so
+# that ordinary edits do not trip it.
+MINIMUM_ACCENT_USES = 5
+
+
+def test_generated_stylesheet_still_contains_the_rules_that_carry_the_site():
+    css = TAILWIND_OUT.read_text()
+    missing = [what for what, needle in LOAD_BEARING_CSS if needle not in css]
+    assert not missing, f"{TAILWIND_OUT.name} no longer styles: {missing}"
+    uses = css.count("var(--cwai-accent)")
+    assert uses >= MINIMUM_ACCENT_USES, (
+        f"{TAILWIND_OUT.name} paints the accent only {uses} time(s); "
+        "the design layer has mostly vanished"
+    )
+
+
+@pytest.mark.parametrize(
+    "theme,selector", [("light", ":root"), ("dark", "body.quarto-dark")]
+)
+def test_every_palette_token_is_painted_by_something(theme, selector):
+    """A token nothing paints is a colour the contrast test measures in vain.
+
+    ``--cwai-callout-bg`` and ``--cwai-accent-fg`` were both declared, both
+    measured by three entries in PAIRS, and referred to by nothing: the callout
+    body is painted ``--cwai-surface`` and no filled accent block carries text.
+    A conformance statement should not rest partly on tests of dead tokens.
+    """
+    painted = (SITE_SRC / "styles.css").read_text() + TAILWIND_OUT.read_text()
+    for name in _tokens((SITE_SRC / "styles.css").read_text(), selector):
+        assert f"var(--cwai-{name})" in painted, (
+            f"{theme}: --cwai-{name} is declared and measured but nothing uses "
+            "it; paint it or delete it, and its PAIRS entries with it"
+        )
+
+
+def test_tailwind_scans_the_committed_pages_and_not_the_generated_ones():
+    """``./site/*.qmd`` also matched site/data.qmd, which is generated.
+
+    scripts/render_site.py writes that page into the Quarto project on every
+    local render and it is gitignored, so CI scanned three top-level pages from
+    a clean checkout while a developer who had rendered scanned four, and
+    ``--check`` compared a build of one input set against a build of another.
+    """
+    content = re.search(
+        r"content:\s*\[(.*?)\]", TAILWIND_CONFIG.read_text(), re.S
+    ).group(1)
+    patterns = re.findall(r'"([^"]+)"', content)
+    assert patterns
+    scanned = {
+        path.resolve()
+        for pattern in patterns
+        for path in REPO.glob(pattern.removeprefix("./"))
+    }
+    authored = {
+        path.resolve()
+        for path in [*SITE_SRC.glob("*.qmd"), *SITE_SRC.glob("_stages/*.qmd")]
+        if path.name != "data.qmd"
+    }
+    assert scanned == authored, {
+        "scanned but not authored": sorted(str(p) for p in scanned - authored),
+        "authored but not scanned": sorted(str(p) for p in authored - scanned),
+    }
+
+
 def test_design_layer_holds_no_colour_of_its_own():
     """Every colour must be a --cwai-* token, because only those are measured.
 
@@ -382,9 +554,22 @@ _FETCHING_TAG = re.compile(
     r"<(?:script|link|img|iframe|source|video|audio|embed|object|track)\b[^>]*>",
     re.IGNORECASE,
 )
-_FETCHING_ATTR = re.compile(r'\b(?:src|href|srcset|data|poster)="([^"]*)"')
+_FETCHING_ATTR = re.compile(r'\b(src|href|srcset|imagesrcset|data|poster)="([^"]*)"')
 _CSS_FETCH = re.compile(r"""(?:@import\s*|url\()\s*["']?\s*((?:https?:)?//[^"')\s]+)""")
 _THIRD_PARTY = re.compile(r"^(?:https?:)?//", re.IGNORECASE)
+
+
+def _candidate_urls(attribute: str, value: str) -> list[str]:
+    """The URLs one attribute asks the browser to fetch.
+
+    ``srcset`` (and ``imagesrcset`` on a preload) holds a comma-separated list
+    of "url descriptor" pairs, so the value as a whole is not a URL. Matched
+    whole against a scheme, ``srcset="a.png 1x, https://cdn/x.png 2x"`` begins
+    with a relative path and the CDN candidate goes unseen.
+    """
+    if not attribute.lower().endswith("srcset"):
+        return [value.strip()]
+    return [parts[0] for candidate in value.split(",") if (parts := candidate.split())]
 
 
 def third_party_fetches(page: Path) -> set[str]:
@@ -393,11 +578,12 @@ def third_party_fetches(page: Path) -> set[str]:
     found: set[str] = set()
     if page.suffix == ".html":
         for tag in _FETCHING_TAG.findall(text):
-            found |= {
-                url
-                for url in _FETCHING_ATTR.findall(tag)
-                if _THIRD_PARTY.match(url.strip())
-            }
+            for attribute, value in _FETCHING_ATTR.findall(tag):
+                found |= {
+                    url
+                    for url in _candidate_urls(attribute, value)
+                    if _THIRD_PARTY.match(url)
+                }
     # Inline <style> blocks and style="" attributes, and whole .css files.
     found |= set(_CSS_FETCH.findall(text))
     return found
@@ -423,6 +609,50 @@ def test_pages_fetch_nothing_from_a_third_party(site):
     assert not offenders, offenders
 
 
+def _every_key(node) -> "list[str]":
+    """Every mapping key anywhere in a parsed YAML document."""
+    if isinstance(node, dict):
+        return [k for key, value in node.items() for k in (key, *_every_key(value))]
+    if isinstance(node, list):
+        return [k for item in node for k in _every_key(item)]
+    return []
+
+
+def test_the_config_turns_on_no_third_party_widget(site):
+    """The two switches that would defeat the scan above without tripping it.
+
+    ``test_pages_fetch_nothing_from_a_third_party`` scans .html and .css by
+    matching fetching *tags* and reading their URL attributes. Quarto does not
+    give giscus a ``<script src=>``: with ``comments: giscus:`` set it writes an
+    inline script into the page body that assigns ``script.src =
+    "https://giscus.app/client.js"`` and appends the element. The URL is in a
+    script body, not in a tag, so that guard returns an empty set while every
+    page fetches giscus.app. Verified by rendering a probe site with the key
+    set. An Algolia search backend hides the same way, behind the search box.
+
+    Extending the scan to .js is the wrong answer: Quarto's bundled JavaScript
+    names fifteen hosts, nearly all of them licence banners and documentation
+    links, and sorting those from a real fetch needs exactly the allow-list the
+    guard's own docstring refuses. So guard the configuration instead -- there
+    is nothing to sift, and nothing to keep up to date.
+    """
+    config = yaml.safe_load((SITE_SRC / "_quarto.yml").read_text())
+    keys = _every_key(config)
+    assert "comments" not in keys, (
+        "a comments provider (giscus, utterances, hypothesis) fetches from a "
+        "third party at run time; vendor it or leave it off"
+    )
+    assert "algolia" not in keys, (
+        "an Algolia backend sends every keystroke to algolia.net; Quarto's "
+        "built-in search is served from this site"
+    )
+    # Non-vacuous: search is on, so this is a guard on how it is configured and
+    # not an artefact of there being no search at all.
+    assert config["website"]["sidebar"]["search"] is True
+    # And the rendered pages really do carry a search box built from this site.
+    assert "quarto-search" in (site / "index.html").read_text()
+
+
 def test_notebook_pages_load_the_vendored_scripts_from_this_site(site):
     page = site / "notebooks" / "01-foundations" / "00-smoke.html"
     html = page.read_text(encoding="utf-8")
@@ -446,14 +676,23 @@ def test_the_third_party_scan_catches_what_it_is_meant_to_catch(tmp_path):
         '<link rel="stylesheet" href="//fonts.googleapis.com/css2?family=Inter">',
         '<img src="http://example.com/x.png">',
         "<style>@import url('https://fonts.googleapis.com/css2');</style>",
+        # A srcset is a comma-separated list of "url descriptor" pairs: the
+        # third party is the second candidate, not the value as a whole.
+        '<img src="a.png" srcset="a.png 1x, https://cdn.example.com/x.png 2x">',
+        '<link rel="preload" as="image" '
+        'imagesrcset="a.png 1x, //cdn.example.com/x.png 2x">',
     ):
         page.write_text(f"<html>{markup}</html>")
         assert third_party_fetches(page), markup
+    # ... and the descriptor is not reported as part of the URL.
+    page.write_text('<img srcset="a.png 1x, https://cdn.example.com/x.png 2x">')
+    assert third_party_fetches(page) == {"https://cdn.example.com/x.png"}
     css.write_text('@import"https://fonts.googleapis.com/css2?family=Inter";')
     assert third_party_fetches(css)
     page.write_text(
         '<a href="https://github.com/x">x</a><script src="../vendor/a.js"></script>'
         '<link href="site_libs/a.css" rel="stylesheet">'
+        '<img src="a.png" srcset="a.png 1x, a@2x.png 2x">'
     )
     assert not third_party_fetches(page)
 

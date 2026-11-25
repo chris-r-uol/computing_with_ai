@@ -25,7 +25,6 @@
   --cwai-link: #0b5c6b;
   /* The line colour: links, the rule under a title, the current sidebar item. */
   --cwai-accent: #0b5c6b;
-  --cwai-accent-fg: #ffffff;
   /* A tint of the line colour, for the current item and the quiet panels. */
   --cwai-accent-soft: #dceaed;
   --cwai-code-bg: #eef2f5;
@@ -33,7 +32,6 @@
   --cwai-border: #6b7b87;
   /* Amber in both themes, so "focus" is one idea and never the link colour. */
   --cwai-focus: #7a4400;
-  --cwai-callout-bg: #e7eff1;
 }
 
 body.quarto-dark {
@@ -43,13 +41,11 @@ body.quarto-dark {
   --cwai-muted: #9bacba;
   --cwai-link: #6fd3e0;
   --cwai-accent: #6fd3e0;
-  --cwai-accent-fg: #06212a;
   --cwai-accent-soft: #16303a;
   --cwai-code-bg: #111b25;
   --cwai-code-fg: #dfe8ef;
   --cwai-border: #8292a0;
   --cwai-focus: #ffd33d;
-  --cwai-callout-bg: #15262c;
 }
 
 /* Long URLs (the data page's source links) must wrap, not force sideways scroll

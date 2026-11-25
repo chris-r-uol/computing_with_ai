@@ -19,13 +19,25 @@
  *    WCAG contrast. A colour written here as a hex value would be a second,
  *    unmeasured copy.
  *
- * `content` lists only committed, hand-authored files. site/data.qmd and
- * site/notebooks/ are generated at render time and are not scanned, so the
- * build output is a function of the repository alone -- which is what lets the
- * freshness check in CI be meaningful.
+ * `content` lists only committed, hand-authored files, and lists the top-level
+ * pages one by one rather than as `./site/*.qmd`. That glob also matched
+ * site/data.qmd, which scripts/render_site.py generates into the Quarto
+ * project on every local render and which is gitignored: CI, rendering from a
+ * clean checkout, scanned three pages while a developer who had rendered
+ * scanned four, so `--check` compared a build of one input set against a build
+ * of another. site/notebooks/ is generated the same way and is likewise not
+ * scanned. Naming the pages keeps the build output a function of the committed
+ * repository alone, which is what lets the freshness check mean anything.
+ * tests/test_site.py asserts this list and the authored pages have not drifted
+ * apart.
  */
 module.exports = {
-  content: ["./site/*.qmd", "./site/_stages/*.qmd"],
+  content: [
+    "./site/index.qmd",
+    "./site/glossary.qmd",
+    "./site/accessibility.qmd",
+    "./site/_stages/*.qmd",
+  ],
   // Every Tailwind utility is prefixed, and this is not cosmetic. Unprefixed,
   // Tailwind emits a utility for any word in the scanned content that happens
   // to name one -- and a lot of ordinary English about programming does:
@@ -53,13 +65,11 @@ module.exports = {
         muted: "var(--cwai-muted)",
         link: "var(--cwai-link)",
         accent: "var(--cwai-accent)",
-        "accent-fg": "var(--cwai-accent-fg)",
         "accent-soft": "var(--cwai-accent-soft)",
         "code-bg": "var(--cwai-code-bg)",
         "code-fg": "var(--cwai-code-fg)",
         edge: "var(--cwai-border)",
         focus: "var(--cwai-focus)",
-        "callout-bg": "var(--cwai-callout-bg)",
       },
       fontFamily: {
         // Self-hosted nothing and fetched nothing: a web font would be either a
