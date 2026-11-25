@@ -15,6 +15,7 @@ from build_student_notebooks import (
     wrap_solution,
 )
 from render_site import SITE_OUT, STAGE_DIRS, render
+from selfhost_assets import ASSETS, check, rewrite_html
 
 from cwai import registry
 
@@ -25,7 +26,14 @@ SECRET_OUTPUT = "the-secret-answer-1234"
 
 
 def _copy_site(dest: Path) -> Path:
-    """A throwaway copy of the Quarto project, so rendering never dirties ``site/``."""
+    """A throwaway copy of the Quarto project, so rendering never dirties ``site/``.
+
+    ``_quarto.yml`` runs ``../scripts/selfhost_assets.py`` after rendering, so the
+    copy carries that script at the same relative place.
+    """
+    scripts = dest.parent / "scripts"
+    scripts.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(REPO / "scripts" / "selfhost_assets.py", scripts)
     shutil.copytree(
         SITE_SRC,
         dest,
@@ -367,32 +375,137 @@ def test_tailwind_utilities_are_prefixed_so_they_cannot_clobber_bootstrap():
     assert not (emitted & collidable), emitted & collidable
 
 
-# The two Quarto injects into every page rendered by its Jupyter engine. They
-# are not ours and removing them is a Quarto question, not a stylesheet one,
-# but they are listed rather than ignored: this site has to open on a poor
-# connection from Chengdu, so a new third-party request should fail a build
-# and be a decision somebody takes on purpose.
-ALLOWED_THIRD_PARTY = {
-    "https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js",
-    "https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js",
-}
+# Everything a browser fetches to show a page: scripts, stylesheets, images,
+# frames, media. Plain ``<a href>`` links are navigation, not a fetch, so a link
+# to GitHub is fine; ``<link>`` is not (stylesheets, preloads, fonts).
+_FETCHING_TAG = re.compile(
+    r"<(?:script|link|img|iframe|source|video|audio|embed|object|track)\b[^>]*>",
+    re.IGNORECASE,
+)
+_FETCHING_ATTR = re.compile(r'\b(?:src|href|srcset|data|poster)="([^"]*)"')
+_CSS_FETCH = re.compile(r"""(?:@import\s*|url\()\s*["']?\s*((?:https?:)?//[^"')\s]+)""")
+_THIRD_PARTY = re.compile(r"^(?:https?:)?//", re.IGNORECASE)
 
 
-def test_pages_fetch_no_new_third_party_resource(site):
-    """Nothing the browser must wait for may come from another origin.
-
-    In particular the Tailwind stylesheet is built into site/tailwind.css and
-    served from this site; cdn.tailwindcss.com is a browser-side JIT build and
-    would be a blocking request to a third party on every page load.
-    """
+def third_party_fetches(page: Path) -> set[str]:
+    """Absolute or protocol-relative URLs a page or stylesheet makes a browser fetch."""
+    text = page.read_text(encoding="utf-8")
     found: set[str] = set()
-    for page in site.rglob("*.html"):
-        html = page.read_text()
-        found |= set(
-            re.findall(r'<(?:script|link)[^>]+(?:src|href)="(https?://[^"]+)"', html)
-        )
-    assert not (found - ALLOWED_THIRD_PARTY), found - ALLOWED_THIRD_PARTY
-    assert "cdn.tailwindcss.com" not in "".join(sorted(found))
+    if page.suffix == ".html":
+        for tag in _FETCHING_TAG.findall(text):
+            found |= {
+                url
+                for url in _FETCHING_ATTR.findall(tag)
+                if _THIRD_PARTY.match(url.strip())
+            }
+    # Inline <style> blocks and style="" attributes, and whole .css files.
+    found |= set(_CSS_FETCH.findall(text))
+    return found
+
+
+def test_pages_fetch_nothing_from_a_third_party(site):
+    """No page, and no stylesheet it loads, may fetch from another origin.
+
+    This site is the degraded-mode path for a student whose Codespace will not
+    connect, read from Chengdu on a poor connection, so a third-party request
+    is a blocking dependency on a host that may never answer. Quarto injects
+    jquery and requirejs from cdn.jsdelivr.net into notebook pages; those are
+    rewritten to site/vendor/ by scripts/selfhost_assets.py. Anything new here,
+    a web font, a CDN script, or Tailwind's browser build (cdn.tailwindcss.com),
+    must be vendored, not allow-listed.
+    """
+    assert list(site.rglob("*.html")), "nothing rendered"
+    offenders = {
+        str(path.relative_to(site)): urls
+        for path in sorted([*site.rglob("*.html"), *site.rglob("*.css")])
+        if (urls := third_party_fetches(path))
+    }
+    assert not offenders, offenders
+
+
+def test_notebook_pages_load_the_vendored_scripts_from_this_site(site):
+    page = site / "notebooks" / "01-foundations" / "00-smoke.html"
+    html = page.read_text(encoding="utf-8")
+    for asset in ASSETS:
+        assert f'src="../../vendor/{asset.filename}"' in html, asset.filename
+        assert (site / "vendor" / asset.filename).read_bytes() == (
+            VENDOR_SRC / asset.filename
+        ).read_bytes()
+    # jQuery before the inline define('jquery') shim, RequireJS before the shim.
+    assert html.index("jquery-3.5.1.min.js") < html.index("define('jquery'")
+    assert html.index("require-2.3.6.min.js") < html.index("define('jquery'")
+    assert "integrity=" not in re.search(r"<script[^>]*vendor/[^>]*>", html).group(0)
+
+
+def test_the_third_party_scan_catches_what_it_is_meant_to_catch(tmp_path):
+    """The guard above is only worth having if it can fail."""
+    page = tmp_path / "p.html"
+    css = tmp_path / "s.css"
+    for markup in (
+        '<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>',
+        '<link rel="stylesheet" href="//fonts.googleapis.com/css2?family=Inter">',
+        '<img src="http://example.com/x.png">',
+        "<style>@import url('https://fonts.googleapis.com/css2');</style>",
+    ):
+        page.write_text(f"<html>{markup}</html>")
+        assert third_party_fetches(page), markup
+    css.write_text('@import"https://fonts.googleapis.com/css2?family=Inter";')
+    assert third_party_fetches(css)
+    page.write_text(
+        '<a href="https://github.com/x">x</a><script src="../vendor/a.js"></script>'
+        '<link href="site_libs/a.css" rel="stylesheet">'
+    )
+    assert not third_party_fetches(page)
+
+
+# ---------------------------------------------------------------------------
+# Vendored scripts (scripts/selfhost_assets.py)
+# ---------------------------------------------------------------------------
+
+VENDOR_SRC = SITE_SRC / "vendor"
+
+
+def test_vendored_scripts_are_as_pinned_and_attributed():
+    assert check(VENDOR_SRC) == []
+
+
+def test_vendored_check_fails_on_a_tampered_file(tmp_path):
+    shutil.copytree(VENDOR_SRC, tmp_path / "vendor")
+    victim = tmp_path / "vendor" / ASSETS[0].filename
+    victim.write_text(victim.read_text() + "\n// edited")
+    assert any("SHA-256" in problem for problem in check(tmp_path / "vendor"))
+
+
+def test_rewrite_is_idempotent_and_leaves_other_scripts_alone(tmp_path):
+    (tmp_path / "vendor").mkdir()
+    for asset in ASSETS:
+        (tmp_path / "vendor" / asset.filename).write_text("x")
+    page = tmp_path / "a" / "b.html"
+    page.parent.mkdir()
+    other = '<script src="../site_libs/x.js" integrity="sha384-keep"></script>'
+    page.write_text(
+        f'<script src="{ASSETS[0].cdn_url}" integrity="sha384-abc" '
+        f'crossorigin="anonymous" data-relocate-top="true"></script>{other}'
+    )
+    once = rewrite_html(page.read_text(), page, tmp_path)
+    assert once == (
+        '<script src="../vendor/jquery-3.5.1.min.js" data-relocate-top="true">'
+        f"</script>{other}"
+    )
+    assert rewrite_html(once, page, tmp_path) == once
+
+
+def test_quarto_project_runs_the_rewrite_after_every_render():
+    config = yaml.safe_load((SITE_SRC / "_quarto.yml").read_text())
+    assert config["project"]["post-render"] == "../scripts/selfhost_assets.py"
+    # Quarto only publishes files a page references, unless told.
+    assert "/vendor/*" in config["project"]["resources"]
+    assert (REPO / "scripts" / "selfhost_assets.py").exists()
+
+
+def test_checks_workflow_verifies_the_vendored_scripts():
+    workflow = (REPO / ".github/workflows/checks.yml").read_text()
+    assert "scripts/selfhost_assets.py --check" in workflow
 
 
 def test_checks_workflow_verifies_the_generated_stylesheet():

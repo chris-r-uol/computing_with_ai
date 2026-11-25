@@ -4,6 +4,13 @@ project:
   render:
     - "*.qmd"
     - "notebooks/**/*.ipynb"
+  # Not referenced from a page, so Quarto would not publish them unasked.
+  resources:
+    - /vendor/*
+  # Quarto loads jquery and requirejs from cdn.jsdelivr.net on any notebook page
+  # with an HTML output, and has no setting to stop it. This points those pages
+  # at the copies in vendor/ instead; see scripts/selfhost_assets.py.
+  post-render: ../scripts/selfhost_assets.py
 
 # Every page declares its language (WCAG 3.1.1).
 lang: en

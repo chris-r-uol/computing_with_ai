@@ -56,6 +56,10 @@ jobs:
       # standalone Tailwind binary from the GitHub release named in
       # scripts/build_tailwind.py.
       - run: uv run python scripts/build_tailwind.py --check
+      # site/vendor/ holds the two scripts Quarto would load from a CDN. Fail if
+      # either differs from the version and hash pinned in the script, or has
+      # lost its licence banner or its entry in site/vendor/NOTICE.txt.
+      - run: uv run python scripts/selfhost_assets.py --check
       - run: uv run python scripts/check_licences.py
       - if: inputs.run-notebooks
         run: uv run python scripts/run_notebooks.py notebooks/
