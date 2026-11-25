@@ -23,7 +23,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from cwai import registry
+from cwai import data, registry
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SITE_DIR = REPO_ROOT / "site"
@@ -52,21 +52,58 @@ def _source_line(source: str) -> str:
     return f"- **Source:** {link}"
 
 
+def _years_phrase(years: Sequence[int]) -> str:
+    """ "2021 to 2025", naming any year missing from inside that span."""
+    if len(years) == 1:
+        return str(years[0])
+    phrase = f"{years[0]} to {years[-1]}"
+    gaps = sorted(set(range(years[0], years[-1] + 1)) - set(years))
+    if gaps:
+        phrase += " (no data for " + ", ".join(str(y) for y in gaps) + ")"
+    return phrase
+
+
+def _years_present(key: str) -> list[int] | None:
+    """The years a dataset's file actually holds, or None if it has no years.
+
+    Read from the file rather than asserted, because a sentence asserting a
+    span goes stale the moment the data is rebuilt, and the data page is where
+    a student goes to find out what they are allowed to conclude.
+    """
+    try:
+        return data.available_years(key)
+    except ValueError:
+        return None  # not split by year: the networks and the sensor series
+    except data.MissingDataError:
+        return None  # audited by scripts/check_licences.py, not here
+
+
 def data_page() -> str:
-    """The data page as Quarto markdown, built from the registry."""
+    """The data page as Quarto markdown, built from the registry and the data."""
+    years = {
+        key: present
+        for key in (i.key for i in registry.list_datasets())
+        if (present := _years_present(key))
+    }
+    spans = sorted({y for present in years.values() for y in present})
     lines = [
         "---",
         "title: Data",
         "---",
         "",
         "Every dataset in this module, where it comes from and the licence it is",
-        "used under. This page is generated from the dataset registry, so it always",
-        "matches the data in the repository.",
-        "",
-        f"The real datasets cover {registry.AREA.replace('-', ' ').title()}, "
-        f"{registry.YEARS[0]} to {registry.YEARS[-1]}.",
+        "used under. This page is generated from the dataset registry and from the",
+        "data files themselves, so it always matches the data in the repository.",
         "",
     ]
+    if spans:
+        lines += [
+            "The collision and traffic datasets are about "
+            f"{registry.AREA.replace('-', ' ').title()} and run from {spans[0]} "
+            f"to {spans[-1]}. **They do not all cover the same years**, so check "
+            "the years listed under each one before you compare two of them.",
+            "",
+        ]
     for info in registry.list_datasets():
         licence = _LICENCE_NAMES.get(info.licence, info.licence)
         lines += [
@@ -77,8 +114,10 @@ def data_page() -> str:
             f"- **Licence:** {licence}",
             f"- **Attribution:** {info.attribution}",
             _source_line(info.source_url),
-            "",
         ]
+        if info.key in years:
+            lines.append(f"- **Years present:** {_years_phrase(years[info.key])}")
+        lines.append("")
     return "\n".join(lines)
 
 

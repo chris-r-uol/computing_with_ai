@@ -4,12 +4,15 @@ title: "Accessibility statement"
 
 This statement applies to the Computing with AI course site, the reading copy of
 the material for the joint module between Southwest Jiaotong University and the
-University of Leeds. It was prepared on 25 November 2026.
+University of Leeds. It was prepared on 25 November 2026 and last reviewed on
+25 November 2026.
 
 We want everyone on the module to be able to use this site. We aim to meet the
-Web Content Accessibility Guidelines, WCAG 2.2, level AA, which is the
-standard the UK Public Sector Bodies (Websites and Mobile Applications)
-Accessibility Regulations 2018 require.
+Web Content Accessibility Guidelines, WCAG 2.2, level AA. The UK Public Sector
+Bodies (Websites and Mobile Applications) Accessibility Regulations 2018
+require the standard set out in EN 301 549, which references WCAG 2.1 level AA;
+2.2 is the later version of the same guidelines, and we aim at it rather than at
+the minimum.
 
 ## What you can expect
 
@@ -49,20 +52,22 @@ This is our current position, and we will update it as the site changes.
   home page's layout and components), did not test text-only zoom, other
   browsers, or any screen reader, and did not run a full audit with assistive
   technology. We therefore describe the site as partially compliant.
-- **Stage pages.** Stages with no published notebooks are not listed in the
-  sidebar yet. Their landing pages can be reached through the previous and next
-  links at the foot of the page.
-- **Charts and images in notebooks.** A figure produced by code may not have a
-  text description. Where a figure carries information, the surrounding text or
-  the code that draws it is meant to give the same information; where it does
-  not, that is a fault we want to hear about.
+- **Stage pages.** Every stage is listed in the sidebar, but the stages that
+  have no published notebooks yet are listed without being linked: their names
+  render as plain text rather than as links. Their landing pages can still be
+  reached through the previous and next links at the foot of the page.
+- **Charts and images in notebooks** (WCAG 1.1.1 Non-text Content). A figure
+  produced by code may not have a text description. Where a figure carries
+  information, the surrounding text or the code that draws it is meant to give
+  the same information; where it does not, that is a fault we want to hear
+  about.
 - **Interactive widgets are not yet published.** The module will add
   interactive explanations. Each will be built from ordinary page elements rather
   than a drawing canvas, will work with a keyboard (for example arrow keys for a
   slider), and will have a text version that presents the same information as a
   table or as prose. This statement will be updated when the first one ships.
-- **Code output.** Wide tables and long lines of output scroll sideways inside
-  their own box rather than reflowing.
+- **Code output** (WCAG 1.4.10 Reflow). Wide tables and long lines of output
+  scroll sideways inside their own box rather than reflowing.
 
 ## Tell us about a problem
 
@@ -84,6 +89,10 @@ the Equality Commission for Northern Ireland is responsible for enforcement.
 
 ## Technical information
 
-This site is built with Quarto and published on GitHub Pages. It relies on
-HTML, CSS and JavaScript. Its accessibility depends on the following
+This site is built with Quarto and is intended for publication on GitHub Pages.
+It has not been deployed yet, so every check described above was made against a
+copy of the site rendered on a local machine, not against a live address. We
+will review this statement once it is published.
+
+It relies on HTML, CSS and JavaScript. Its accessibility depends on these
 technologies working with your browser and any assistive technology you use.
