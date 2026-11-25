@@ -8,9 +8,7 @@ OGL = (
     "Contains public sector information licensed under the "
     "Open Government Licence v3.0."
 )
-ODBL = (
-    "© OpenStreetMap contributors, licensed under the Open Database License (ODbL)."
-)
+ODBL = "© OpenStreetMap contributors, licensed under the Open Database License (ODbL)."
 
 EXPECTED_RELPATHS = {
     "collisions": "stats19/collisions.parquet",
@@ -86,7 +84,10 @@ def test_source_urls():
     )
     for key in ("collisions", "casualties", "vehicles"):
         assert registry.get(key).source_url == stats19
-    assert registry.get("traffic-counts").source_url == "https://roadtraffic.dft.gov.uk/downloads"
+    assert (
+        registry.get("traffic-counts").source_url
+        == "https://roadtraffic.dft.gov.uk/downloads"
+    )
     for key in ("network-leeds", "network-chengdu"):
         assert registry.get(key).source_url == "https://www.openstreetmap.org/copyright"
     for key in ("sensor-clean", "sensor-faulty"):

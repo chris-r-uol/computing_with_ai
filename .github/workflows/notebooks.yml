@@ -1,0 +1,18 @@
+name: notebooks
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Mondays 06:00 UTC. Catches dependencies drifting under untouched material.
+    - cron: "0 6 * * 1"
+
+jobs:
+  notebooks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --all-groups
+      - run: uv run python scripts/run_notebooks.py notebooks/

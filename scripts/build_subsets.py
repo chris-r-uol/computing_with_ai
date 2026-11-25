@@ -182,9 +182,10 @@ def _raise_if_empty(
             f"Column {year_col!r} has no year in {registry.YEARS}; "
             f"values found: {_found(raw[year_col])}."
         )
-    if accident_index is not None and not raw.accident_index.isin(
-        set(accident_index)
-    ).any():
+    if (
+        accident_index is not None
+        and not raw.accident_index.isin(set(accident_index)).any()
+    ):
         parts.append(
             "None of the rows match the supplied collision subset; "
             f"accident_index values found: {_found(raw.accident_index)}."
@@ -212,9 +213,7 @@ def build_collisions(raw_csv: Path, out: Path) -> pd.DataFrame:
     # (0, 0) is a placeholder for "unknown", not a place in the Gulf of Guinea.
     # Genuinely blank coordinates are kept: they are a data-quality lesson.
     df = df[~((df.longitude == 0) & (df.latitude == 0))]
-    _raise_if_empty(
-        df, raw, raw_csv, "accident_year", "local_authority_ons_district"
-    )
+    _raise_if_empty(df, raw, raw_csv, "accident_year", "local_authority_ons_district")
     df["severity_label"] = pd.Categorical(
         df.accident_severity.map(_SEVERITY_LABELS), dtype=_SEVERITY_TYPE
     )

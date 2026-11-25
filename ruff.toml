@@ -1,5 +1,11 @@
 line-length = 88
 target-version = "py312"
+# Deliberately broken notebooks that the harness tests execute.
+extend-exclude = ["tests/fixtures"]
 
 [lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[format]
+# Format Python only; the markdown plan documents are not ours to reflow.
+exclude = ["*.md"]

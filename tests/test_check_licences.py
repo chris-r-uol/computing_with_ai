@@ -126,3 +126,33 @@ def test_stray_attribution_elsewhere_is_still_reported(tree):
     assert any(
         "stats19/ATTRIBUTION.txt" in p and "not registered" in p for p in problems
     )
+
+
+def test_allow_missing_suppresses_only_the_missing_file_problem(tmp_path):
+    # Empty tree: every dataset missing and every licence text missing.
+    strict = check_licences.audit(tmp_path)
+    relaxed = check_licences.audit(tmp_path, allow_missing=True)
+    assert not any("is missing (dataset" in p for p in relaxed)
+    assert any("is missing (dataset" in p for p in strict)
+    # The licence-text check is still live.
+    assert any("LICENSES/" in p for p in relaxed)
+
+
+def test_allow_missing_still_reports_unclaimed_files(tree):
+    (tree / "stats19" / "collisions.parquet").unlink()
+    (tree / "mystery.parquet").write_bytes(b"x")
+    problems = check_licences.audit(tree, allow_missing=True)
+    assert any("mystery.parquet" in p for p in problems)
+    assert not any("collisions" in p for p in problems)
+
+
+def test_allow_missing_still_enforces_budget(tree):
+    (tree / "big.bin").write_bytes(b"x" * BUDGET_BYTES)
+    problems = check_licences.audit(tree, allow_missing=True)
+    assert any("budget" in p for p in problems)
+
+
+def test_main_flag_is_opt_in(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(check_licences.registry, "data_root", lambda: tmp_path)
+    assert check_licences.main([]) == 1
+    assert check_licences.main(["--allow-missing"]) == 1  # licences still absent

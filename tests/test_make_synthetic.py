@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-
-from cwai import registry
 from make_synthetic import (
     FAULTS,
     SEED,
@@ -11,6 +9,8 @@ from make_synthetic import (
     make_sensor_series,
     write_all,
 )
+
+from cwai import registry
 
 
 def test_same_seed_gives_identical_output():
@@ -46,8 +46,12 @@ def test_weekday_morning_peak_exceeds_small_hours():
 
 def test_weekday_has_evening_peak_and_weekend_is_flatter():
     df = make_sensor_series(days=84)
-    weekday = df[df.timestamp.dt.day_of_week < 5].groupby(df.timestamp.dt.hour).flow.mean()
-    weekend = df[df.timestamp.dt.day_of_week >= 5].groupby(df.timestamp.dt.hour).flow.mean()
+    weekday = (
+        df[df.timestamp.dt.day_of_week < 5].groupby(df.timestamp.dt.hour).flow.mean()
+    )
+    weekend = (
+        df[df.timestamp.dt.day_of_week >= 5].groupby(df.timestamp.dt.hour).flow.mean()
+    )
     assert weekday[17] > weekday[12] * 1.2
     assert weekday[8] > weekday[12] * 1.2
     assert weekend[8] < weekday[8] * 0.7
@@ -134,7 +138,7 @@ def test_write_all_uses_registry_paths_and_is_byte_identical(tmp_path):
         registry.get("sensor-faulty").relpath,
     }
     assert {str(p.relative_to(tmp_path / "a")) for p in first} == expected
-    for p, q in zip(first, second):
+    for p, q in zip(first, second, strict=True):
         assert p.read_bytes() == q.read_bytes()
     clean = pd.read_parquet(first[0])
     faulty = pd.read_parquet(first[1])
