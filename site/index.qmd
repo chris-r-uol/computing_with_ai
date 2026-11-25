@@ -1,17 +1,78 @@
 ---
-title: "Computing with AI"
+title: "From no Python to a machine-learning project"
+pagetitle: "Computing with AI"
+subtitle: "Four stages, on real road-safety data. Every notebook is readable
+  here in full -- the explanation, the code and the output of running it --
+  with its exercises left for you to do."
+toc: false
+include-before-body:
+  text: |
+    <div class="cwai-eyebrow">Computing with AI</div>
 ---
 
-This is the reading copy of the Computing with AI course material. It takes you
-from no Python to a small machine-learning project on real road-safety data, in
-four stages: programming from first principles, AI-accelerated and agentic
-workflows, direct machine learning, and a project of your own.
-
-Every notebook is **readable here**, with its explanations, its code and the
-output of running it, and with its exercises left for you to do. The worked
+This is the reading copy of the Computing with AI course material. The worked
 answers are in `notebooks/` in the repository, and they will reach this site
 through the hint tiers. If something stops working on your computer or your
 connection, you can still read the lesson.
+
+## The course, stage by stage
+
+::: {.cwai-stages}
+::: {.cwai-card}
+[Stage 0]{.cwai-card-eyebrow}
+
+### [Warm-up](notebooks/00-warmup/index.qmd)
+
+Getting your Codespace running and your first cell executed, before the course
+proper starts.
+:::
+
+::: {.cwai-card}
+[Stage 1]{.cwai-card-eyebrow}
+
+### [Programming from first principles](notebooks/01-foundations/index.qmd)
+
+Python through transport data from the first cell, with engineering practice --
+tracebacks, `assert`, the debugger, `pytest` -- part of the work from the start.
+:::
+
+::: {.cwai-card}
+[Stage 2]{.cwai-card-eyebrow}
+
+### [AI-accelerated and agentic workflows](notebooks/02-ai-accelerated/index.qmd)
+
+Autocomplete first, then agentic coding, framed as generate, then interrogate.
+:::
+
+::: {.cwai-card}
+[Stage 3]{.cwai-card-eyebrow}
+
+### [Direct machine learning](notebooks/03-machine-learning/index.qmd)
+
+A training loop written by hand in PyTorch, then the same model in Keras for
+contrast, and the metrics that survive class imbalance.
+:::
+
+::: {.cwai-card}
+[Stage 4]{.cwai-card-eyebrow}
+
+### [Project](notebooks/04-project/index.qmd)
+
+An open project on a question you choose, demonstrated live as a working
+notebook with a short presentation.
+:::
+
+::: {.cwai-card}
+[Optional]{.cwai-card-eyebrow}
+
+### [Stretch](notebooks/90-stretch/index.qmd)
+
+Extra material for when you have finished a stage and want to go further.
+:::
+:::
+
+Use the bar at the top of every page to move between stages. The stage you are
+in is marked, and each stage lists its notebooks as they are published.
 
 ## Two ways through the material
 
@@ -54,28 +115,25 @@ glossary for any word you do not know. Reconnect when you can and run the
 notebook then. **You lose minutes, not a morning.**
 :::
 
-## Where things are
-
-Use the sidebar to move between stages. Each stage lists its notebooks, and the
-one you are reading is marked.
+## Reference
 
 ::: {.cwai-grid}
 ::: {.cwai-card}
-[Data](data.qmd){.cwai-card-title}
+### [Data](data.qmd)
 
 Every dataset in the module, where it came from, which years it covers and the
 licence it is used under.
 :::
 
 ::: {.cwai-card}
-[Glossary](glossary.qmd){.cwai-card-title}
+### [Glossary](glossary.qmd)
 
 Each technical term in English and Chinese, with a one-line explanation. Use it
 whenever a word stops you.
 :::
 
 ::: {.cwai-card}
-[Accessibility](accessibility.qmd){.cwai-card-title}
+### [Accessibility](accessibility.qmd)
 
 How accessible this site is, what we have tested, what we have not, and what to
 do if something does not work for you.

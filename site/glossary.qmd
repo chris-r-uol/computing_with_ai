@@ -1,5 +1,11 @@
 ---
 title: "Glossary"
+# One table, no section headings: an in-page contents list would be empty,
+# and the column it reserves is width the Chinese column can use instead.
+toc: false
+include-before-body:
+  text: |
+    <div class="cwai-eyebrow">Reference</div>
 ---
 
 Technical terms in English with their Chinese equivalents. Lessons are taught in

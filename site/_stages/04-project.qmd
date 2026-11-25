@@ -1,7 +1,21 @@
 ---
-title: "Stage 4: Project"
+title: "Project"
+toc: false
 ---
 
-An open project on a question you choose, demonstrated live as a working notebook with a short presentation.
+An open project on a question you choose.
 
-Notebooks for this stage appear in the sidebar as they are published. Each one is readable here in full, with its code and output.
+::: {.cwai-grid}
+::: {.cwai-card}
+## What this stage covers
+
+Your own question, your own data work, and the one question you must be able to
+answer about the result: how do you know this is right?
+:::
+
+::: {.cwai-card}
+## What you will produce
+
+A working notebook, demonstrated live, with a short presentation.
+:::
+:::

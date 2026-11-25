@@ -23,42 +23,54 @@ execute:
 website:
   title: "Computing with AI"
   description: "Python, AI-accelerated coding and machine learning for transport"
-  page-navigation: true
-  bread-crumbs: true
-  sidebar:
-    style: docked
+  # A top navbar, not a docked sidebar tree. The module is six stages and three
+  # reference pages; a navbar shows the whole course at once, which is the
+  # thing a student working alone most needs to be able to see. The sidebar
+  # showed the same six names plus every notebook inside the current one, which
+  # reads as documentation rather than as a course.
+  #
+  # Consequences of dropping the sidebar, all of them deliberate:
+  #   - Quarto builds breadcrumbs and previous/next from the sidebar tree, so
+  #     both are gone. Every stage is now one click from every page, which is
+  #     what previous/next was standing in for.
+  #   - A stage's notebooks are no longer listed in the chrome, so each stage
+  #     landing page carries a listing of its own; scripts/render_site.py adds
+  #     it to the stages that have notebooks. Without that the smoke test would
+  #     be reachable from nowhere.
+  #   - Search moves from the sidebar to the navbar.
+  #
+  # The numbers are part of the label rather than the whole of it: a link whose
+  # accessible name is "1" tells a screen-reader user nothing, and a student who
+  # has not memorised the running order cannot use it either.
+  navbar:
     search: true
-    contents:
-      - text: "Start here"
-        href: index.qmd
-      - section: "Stage 0: Warm-up"
+    left:
+      - text: "0 Warm-up"
         href: notebooks/00-warmup/index.qmd
-        contents: notebooks/00-warmup/*
-      - section: "Stage 1: Programming from first principles"
+      - text: "1 Foundations"
         href: notebooks/01-foundations/index.qmd
-        contents: notebooks/01-foundations/*
-      - section: "Stage 2: AI-accelerated and agentic workflows"
+      - text: "2 AI workflows"
         href: notebooks/02-ai-accelerated/index.qmd
-        contents: notebooks/02-ai-accelerated/*
-      - section: "Stage 3: Direct machine learning"
+      - text: "3 Machine learning"
         href: notebooks/03-machine-learning/index.qmd
-        contents: notebooks/03-machine-learning/*
-      - section: "Stage 4: Project"
+      - text: "4 Project"
         href: notebooks/04-project/index.qmd
-        contents: notebooks/04-project/*
-      - section: "Stretch"
+      - text: "Stretch"
         href: notebooks/90-stretch/index.qmd
-        contents: notebooks/90-stretch/*
-      - section: "Reference"
-        contents:
-          - data.qmd
-          - glossary.qmd
-          - accessibility.qmd
+    right:
+      - text: "Reference"
+        menu:
+          - text: "Data"
+            href: data.qmd
+          - text: "Glossary"
+            href: glossary.qmd
+          - text: "Accessibility"
+            href: accessibility.qmd
 
 format:
   html:
     # Plain Bootstrap with our own variables, rather than a Bootswatch theme:
-    # Quarto's chrome (sidebar, table of contents, search, callouts, code
+    # Quarto's chrome (navbar, table of contents, search, callouts, code
     # highlighting) still rests on Bootstrap, which several accessibility tests
     # already assume, but one less set of borrowed opinions fights the design
     # layer. Not `theme: none` -- rebuilding Quarto's chrome is a large surface
@@ -73,7 +85,23 @@ format:
     css:
       - styles.css
       - tailwind.css
+    # MathML, not Quarto's default MathJax. Quarto injects MathJax from
+    # cdn.jsdelivr.net, plus a polyfill from cdnjs.cloudflare.com, into any
+    # page carrying a listing -- whether or not the page has any mathematics
+    # on it -- and this site must fetch nothing from a third party. MathML is
+    # converted by Pandoc at render time, needs no script at all, and a screen
+    # reader reads it as mathematics rather than as a picture of it. Found by
+    # test_pages_fetch_nothing_from_a_third_party when the stage pages grew a
+    # listing; it would have arrived with the first notebook that used `$...$`
+    # in any case.
+    html-math-method: mathml
     toc: true
     toc-depth: 3
     code-copy: true
     smooth-scroll: false
+    # Marks the stage you are inside on the navbar. Quarto marks a navbar item
+    # active only on an exact href match, so a notebook page leaves every item
+    # unmarked. Inline and served from this site; the page is complete without
+    # it, and the eyebrow above each title says the same thing in text.
+    include-after-body:
+      - _includes/navbar-active.html

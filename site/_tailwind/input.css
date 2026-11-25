@@ -5,9 +5,10 @@
  *
  * The visual idea is a transport schematic: ink on cool paper, one petrol-teal
  * line colour, and hierarchy drawn with hairlines and small station markers
- * rather than with shadows, gradients or photography. The sidebar's nested
- * items hang off a vertical line and the current page is marked on it, which is
- * both the strongest theme cue and the most useful thing on the page.
+ * rather than with shadows, gradients or photography. The top navbar is the
+ * line itself -- the whole course laid out end to end, with the stage you are
+ * in marked on it -- and the page below is composed in cards, each one
+ * answering a question a student actually has.
  *
  * Every colour is a `--cwai-*` token from site/styles.css, which is where the
  * contrast test measures the palette. No colour literal belongs in this file.
@@ -50,14 +51,9 @@ body {
   line-height: 1.65;
 }
 
-/* The line colour, drawn once across the top of every page. The only purely
-   decorative mark on the site: a pseudo-element, so it is absent from the
-   accessibility tree, and it costs no request. */
-body::before {
-  content: "";
-  @apply cw-pointer-events-none cw-fixed cw-inset-x-0 cw-top-0 cw-h-[3px] cw-bg-accent;
-  z-index: 1200;
-}
+/* There was a 3px accent hairline fixed across the very top of every page
+   here. The dark navbar now occupies that band and says the same thing with a
+   whole bar, so the hairline was a second line drawn on top of the first. */
 
 /* Headings: tighter and more consistently weighted than Bootstrap's, so
    scanning a long notebook page is a matter of size rather than guesswork. */
@@ -132,71 +128,131 @@ main.content a:not(.btn):not(.anchorjs-link) {
 }
 
 /* ------------------------------------------------------------------ *
- * Sidebar: the route line
+ * Top navbar: the whole course, end to end
  * ------------------------------------------------------------------ */
 
-#quarto-sidebar.sidebar {
-  @apply cw-border-0 cw-border-solid cw-border-r cw-border-edge cw-bg-surface;
+/* A dark bar in both themes, which makes it a surface of its own: every colour
+   on it is a --cwai-navbar-* token with its own entry in PAIRS. The hairline
+   matters more than it looks -- in the dark theme the bar is 1.04:1 against
+   the page behind it, so the edge is the only thing that makes it a bar. */
+#quarto-header .navbar {
+  @apply cw-border-0 cw-border-solid cw-border-b cw-border-edge cw-bg-nav-surface;
 }
 
-.sidebar-header .sidebar-title a {
-  @apply cw-text-ink cw-no-underline;
+#quarto-header .navbar .navbar-brand,
+#quarto-header .navbar .navbar-title {
+  @apply cw-text-nav-ink cw-no-underline;
   font-weight: 650;
   letter-spacing: -0.01em;
 }
 
 /* The first station marker, so the line motif starts at the module name. */
-.sidebar-header .sidebar-title a::before {
+#quarto-header .navbar .navbar-brand::before {
   content: "";
-  @apply cw-mr-2 cw-inline-block cw-h-[0.7em] cw-w-[3px] cw-rounded-full cw-bg-accent;
+  @apply cw-mr-2 cw-inline-block cw-h-[0.7em] cw-w-[3px] cw-rounded-full cw-bg-nav-accent;
   vertical-align: -0.04em;
 }
 
-.sidebar-navigation .sidebar-item {
-  @apply cw-leading-snug;
+/* Wrap between items, never inside one: at a 1024px laptop width the six
+   stages plus Reference do not fit on one line, and Bootstrap's default is to
+   break "0 Warm-up" across two lines rather than move it to the next row,
+   which turns the bar into a ragged block of half-words. Two tidy rows is the
+   right answer -- the point of the bar is that the whole course is on it. */
+#quarto-header .navbar .navbar-nav {
+  @apply cw-flex-wrap;
 }
 
-.sidebar-navigation .sidebar-item-section > .sidebar-item-container > a,
-.sidebar-navigation .sidebar-item-section > .sidebar-item-container > button {
-  @apply cw-text-ink;
-  font-weight: 600;
+#quarto-header .navbar .navbar-nav .nav-link,
+#quarto-header .navbar .navbar-nav .dropdown-item {
+  @apply cw-relative cw-whitespace-nowrap cw-text-nav-ink cw-no-underline;
 }
 
-/* A stage with no published notebooks is rendered by Quarto as plain text
-   rather than as a link. Say so with colour and weight, so it does not read as
-   a link that will not work. */
-.sidebar-navigation .sidebar-item-section > span.sidebar-item-text {
-  @apply cw-text-muted;
-  font-weight: 600;
+#quarto-header .navbar .navbar-nav .nav-link:hover,
+#quarto-header .navbar .navbar-nav .nav-link:focus-visible {
+  @apply cw-text-nav-accent;
 }
 
-.sidebar-navigation .sidebar-item a.sidebar-item-text {
-  @apply cw-rounded-[5px] cw-border-0 cw-text-ink cw-no-underline;
-}
-
-/* The notebooks of a stage hang off a vertical line: the stops on that stage's
-   route. */
-.sidebar-navigation ul.sidebar-section.depth1 {
-  @apply cw-ml-3 cw-border-0 cw-border-solid cw-border-l cw-border-edge cw-pl-2;
-}
-
-.sidebar-navigation .sidebar-item a.sidebar-item-text:hover {
-  @apply cw-bg-accent-soft;
-}
-
-/* "You are here", marked on the line. Three cues rather than one -- a bar, a
-   tint and a heavier weight -- so it survives both themes and a reader who
-   cannot tell the tint from the ground. */
-.sidebar-navigation .sidebar-item a.sidebar-item-text.active,
-.sidebar-navigation .sidebar-item a.sidebar-link.active {
-  @apply cw-border-0 cw-border-solid cw-border-l-[3px] cw-border-accent cw-bg-accent-soft cw-text-ink;
-  border-radius: 0 5px 5px 0;
+/* "You are here", marked on the bar the way a named stretch of route is marked
+   under a section heading elsewhere on the site: a short accent segment on the
+   line. Weight as well as colour, so it survives for a reader who cannot tell
+   the two apart. Set by Quarto on an exact match and by
+   site/_includes/navbar-active.html for a notebook inside a stage. */
+#quarto-header .navbar .navbar-nav .nav-link.active {
+  @apply cw-text-nav-ink;
   font-weight: 650;
 }
 
+#quarto-header .navbar .navbar-nav .nav-link.active::after {
+  content: "";
+  @apply cw-absolute cw-bottom-0 cw-left-2 cw-right-2 cw-h-[3px] cw-rounded-full cw-bg-nav-accent;
+}
+
+/* Collapsed, the items stack and there is no bar edge to sit on, so the marker
+   moves to the leading edge of the item. */
+@media (max-width: 991.98px) {
+  #quarto-header .navbar .navbar-nav .nav-link.active::after {
+    @apply cw-bottom-1 cw-left-0 cw-right-auto cw-top-1 cw-h-auto cw-w-[3px];
+  }
+}
+
+#quarto-header .navbar .dropdown-menu {
+  @apply cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface;
+}
+
+#quarto-header .navbar .dropdown-menu .dropdown-item {
+  @apply cw-text-ink;
+}
+
+#quarto-header .navbar .dropdown-menu .dropdown-item:hover,
+#quarto-header .navbar .dropdown-menu .dropdown-item.active {
+  @apply cw-bg-accent-soft cw-text-ink;
+}
+
+/* The focus ring everywhere else is --cwai-focus, a dark amber that measures
+   2.1:1 against the navbar and so cannot be seen on it. The bar uses the dark
+   theme's amber instead: still amber, still one idea, 11.4:1 on the bar. */
+#quarto-header .navbar a:focus-visible,
+#quarto-header .navbar button:focus-visible,
+#quarto-header .navbar input:focus-visible,
+#quarto-header .navbar .aa-Form:focus-within {
+  outline: 3px solid var(--cwai-navbar-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Reflow at 320px. The navbar is a flex row, and a flex item defaults to
+   `min-width: auto`, so the brand ("Computing with AI") plus the toggler plus
+   the search button refuse to shrink below their content and push the layout
+   viewport wider than the screen -- the same failure the old breadcrumb
+   caused, in the same place. Letting the brand wrap is what fixes it. */
+#quarto-header .navbar .navbar-container,
+#quarto-header .navbar .navbar-brand-container,
+#quarto-header .navbar .navbar-brand {
+  min-width: 0;
+}
+
+#quarto-header .navbar .navbar-title {
+  overflow-wrap: anywhere;
+}
+
 /* ------------------------------------------------------------------ *
- * Table of contents, breadcrumbs, page navigation
+ * The right rail: a stack of panels
  * ------------------------------------------------------------------ */
+
+/* The rail holds state about where the reader is, not just a list of headings.
+   Today that is one panel, the in-page contents list; a progress panel is
+   planned and will be a second. So the rail is a stack and the panel is the
+   unit: every direct child of #quarto-margin-sidebar is drawn as a card,
+   whatever puts it there -- Quarto's own table of contents, a `.column-margin`
+   block in a page, or a script appending one. Adding the second panel is
+   adding an element; it is not a change to this stylesheet. */
+#quarto-margin-sidebar {
+  @apply cw-flex cw-flex-col cw-gap-4;
+}
+
+#quarto-margin-sidebar > * {
+  @apply cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface cw-px-4 cw-py-3;
+}
 
 #TOC #toc-title,
 .page-columns .toc-title {
@@ -222,57 +278,33 @@ main.content a:not(.btn):not(.anchorjs-link) {
   font-weight: 600;
 }
 
-.quarto-title-breadcrumbs .breadcrumb,
-nav.quarto-page-breadcrumbs .breadcrumb {
-  @apply cw-mb-0 cw-text-sm cw-text-muted;
-}
+/* Breadcrumbs and previous/next were styled here, including two reflow fixes
+   won by measuring a 320px window. Quarto builds both from the sidebar tree,
+   and there is no sidebar any more, so neither is rendered on any page: the
+   rules styled nothing. The failures they fixed belonged to the narrow-screen
+   secondary nav, which also exists only with a sidebar. The navbar has its own
+   version of that failure, fixed above and measured the same way.
 
-/* Reflow at 320px. The breadcrumb in the narrow-screen toolbar is long enough
-   on a notebook page -- "Stage 1: Programming from first principles > Smoke
-   test" -- to push that toolbar wider than the viewport. A flex item defaults
-   to `min-width: auto` and so refuses to shrink below its content, and the
-   overflow does not scroll: it widens the layout viewport and carries the
-   search button off the right edge, where it cannot be reached at all. These
-   four let the breadcrumb wrap instead. Found by measuring in a 320px window,
-   not by reading the CSS. */
-#quarto-header .quarto-secondary-nav .container-fluid,
-#quarto-header nav.quarto-page-breadcrumbs,
-#quarto-header .quarto-secondary-nav .breadcrumb,
-#quarto-header .quarto-secondary-nav .breadcrumb-item {
-  min-width: 0;
-}
+   What previous/next was really carrying -- "a stage with no notebooks can
+   only be reached by paging to it" -- is gone as well: every stage is a navbar
+   item on every page.
 
-/* Previous and next become two real targets rather than two stray links. This
-   matters most on a phone, and on a stage landing page, where they are the only
-   way into a stage that has no notebooks in the sidebar yet. */
-/* `min-width: 0` and the wrapping below are not tidying: this nav is a direct
-   child of Quarto's #quarto-content grid, so its automatic minimum size is its
-   min-content width. Turning the two links into padded buttons pushed that to
-   347px, the grid column could no longer shrink to a 320px screen, and the
-   layout viewport grew with it until the toolbar's search button sat off the
-   right-hand edge. Caught by measuring a 320px window against the same page
-   with this stylesheet removed. */
-nav.page-navigation {
-  @apply cw-mt-10 cw-flex-wrap cw-gap-3 cw-border-0 cw-border-solid cw-border-t cw-border-edge cw-pt-5;
-  min-width: 0;
-}
+ * ------------------------------------------------------------------ *
+ * Eyebrow: which part of the course this page belongs to
+ * ------------------------------------------------------------------ */
 
-nav.page-navigation .nav-page {
-  min-width: 0;
-}
+/* Small caps above the page title, naming the stage. It is written into the
+   page as real text -- by scripts/render_site.py through Quarto's per-folder
+   metadata, or by a page's own front matter -- and sits before the <h1> in the
+   document, so a screen reader announces "Stage 1" and then the title.
+   `text-transform` changes only how it looks.
 
-nav.page-navigation .nav-page a.pagination-link {
-  @apply cw-inline-flex cw-max-w-full cw-items-center cw-gap-1 cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface cw-px-3 cw-py-2 cw-text-link cw-no-underline;
-}
-
-nav.page-navigation .nav-page a.pagination-link:hover {
-  @apply cw-bg-accent-soft;
-}
-
-nav.page-navigation .nav-page-text {
-  @apply cw-text-link;
-  min-width: 0;
-  overflow-wrap: anywhere;
+   It is also the plain-text half of the navbar's active marker: a reader with
+   no JavaScript still knows which stage they are in. */
+.cwai-eyebrow {
+  @apply cw-mb-1 cw-mt-0 cw-text-xs cw-uppercase cw-text-accent;
+  font-weight: 700;
+  letter-spacing: 0.1em;
 }
 
 /* ------------------------------------------------------------------ *
@@ -339,12 +371,30 @@ nav.page-navigation .nav-page-text {
   max-width: none;
 }
 
+/* Cards are the composition idiom of this site. One card answers one question
+   a student is actually asking -- what does this stage cover, what will I be
+   able to do, which data is it -- rather than holding a paragraph of a longer
+   argument. Prose that has to be read start to finish stays prose. */
+/* The bottom margin is not symmetry. Quarto zeroes the top margin of the first
+   section heading on a page, so that a page opening with a section does not
+   open with a gap -- and on a stage page the first section ("Notebooks in this
+   stage") is preceded by a card grid, so the heading sat flat against the
+   cards. A grid's own trailing margin is the fix that does not fight Quarto's
+   rule at a higher specificity for every page on the site. */
 .cwai-grid {
-  @apply cw-mt-6 cw-grid cw-grid-cols-1 cw-gap-4 md:cw-grid-cols-3;
+  @apply cw-mb-8 cw-mt-6 cw-grid cw-grid-cols-1 cw-gap-4 md:cw-grid-cols-3;
 }
 
+/* The stage grid on the home page: six cards, so two rows of three on a
+   desktop and two of two on a tablet, rather than three ragged rows. */
+.cwai-stages {
+  @apply cw-mb-8 cw-mt-6 cw-grid cw-grid-cols-1 cw-gap-4 sm:cw-grid-cols-2 lg:cw-grid-cols-3;
+}
+
+.cwai-grid > .cwai-card,
+.cwai-stages > .cwai-card,
 .cwai-card {
-  @apply cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface cw-p-4;
+  @apply cw-m-0 cw-flex cw-h-full cw-flex-col cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface cw-p-4;
 }
 
 .cwai-card > :first-child {
@@ -360,13 +410,99 @@ nav.page-navigation .nav-page-text {
   max-width: none;
 }
 
-.cwai-card > p:first-of-type {
+/* A card's title is a real heading, so the grid is a list a screen reader can
+   move through rather than a run of links. A linked title keeps the body link
+   styling -- colour and an underline -- deliberately: the accessibility
+   statement says links are underlined as well as coloured, and a card title
+   drawn in the ink colour with no underline would be a link with no cue at
+   all. */
+/* h2 on a stage landing page, h3 on the home page, and the same card either
+   way: a stage page's cards are its top-level sections, while the home page's
+   sit under "The course, stage by stage". The level follows the document
+   outline, because headings that skip a level are a failure (WCAG 1.3.1) and
+   because the outline is how a screen-reader user moves around the page. */
+main.content .cwai-card h2,
+main.content .cwai-card h3 {
+  @apply cw-mb-2 cw-mt-0 cw-text-[1.05rem];
+  font-weight: 650;
+}
+
+/* Bootstrap underlines an h2 with a hairline and the design layer marks the
+   start of that line with an accent segment. Both are the page's own
+   furniture and neither belongs inside a card, which already has an edge. */
+main.content .cwai-card h2 {
+  @apply cw-border-0 cw-pb-0;
+}
+
+main.content .cwai-card h2::after {
+  content: none;
+}
+
+/* Pandoc wraps each heading and what follows it in a <section>, so inside a
+   card the heading is not a direct child and the card's own spacing rules
+   miss it. */
+main.content .cwai-card > section {
+  @apply cw-m-0 cw-flex cw-h-full cw-flex-col;
+}
+
+main.content .cwai-card > section > :last-child {
+  @apply cw-mb-0;
+}
+
+/* The same eyebrow as above a page title, one size down, inside a card: it
+   says "Stage 2" so the card's heading does not have to carry the number. */
+.cwai-card-eyebrow {
+  @apply cw-mb-1 cw-block cw-text-[0.7rem] cw-uppercase cw-text-accent;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+/* The eyebrow is a span in a paragraph of its own, which is the first thing in
+   the card; close the gap to the heading under it. */
+.cwai-card > p:first-child {
   @apply cw-mb-1;
 }
 
-.cwai-card-title {
-  @apply cw-block cw-text-[1.02rem];
+/* ------------------------------------------------------------------ *
+ * The home page's opening
+ * ------------------------------------------------------------------ */
+
+/* A hero, not an introduction: the headline is the h1 and the subtitle is
+   Quarto's own `subtitle:`, so the page still has exactly one top-level
+   heading and the title block is still the title block. */
+#title-block-header .subtitle.lead {
+  @apply cw-mb-0 cw-mt-4 cw-text-[1.15rem] cw-text-muted;
+  max-width: 54ch;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------ *
+ * Notebook listing on a stage page
+ * ------------------------------------------------------------------ */
+
+/* Quarto's default listing, drawn as the site's cards. This is how a notebook
+   is reached now that no sidebar lists one. Quarto renders each item's title
+   as an h3 with a real link, which is why the listing sits under an h2. */
+main.content .quarto-listing .list.quarto-listing-default {
+  @apply cw-mt-4 cw-grid cw-grid-cols-1 cw-gap-4 sm:cw-grid-cols-2;
+}
+
+main.content .quarto-post {
+  @apply cw-m-0 cw-flex cw-h-full cw-flex-col cw-rounded-card cw-border-solid cw-border cw-border-edge cw-bg-surface cw-p-4;
+}
+
+main.content .quarto-post h3.listing-title {
+  @apply cw-mb-2 cw-mt-0 cw-text-[1.05rem];
   font-weight: 650;
+}
+
+/* The description is a second link to the same page, which Quarto wraps round
+   the whole block. Underlining a paragraph is noise and the title above it is
+   already the underlined link to that page, so this one is text-coloured. */
+main.content .quarto-post .listing-description,
+main.content .quarto-post .listing-description a:not(.btn) {
+  @apply cw-text-[0.95rem] cw-text-muted;
+  text-decoration: none;
 }
 
 /* ------------------------------------------------------------------ *
@@ -512,8 +648,7 @@ summary:focus-visible,
    palettes -- and for those 120ms the text is a blend of the two, which is
    measurably below AA. Hover feedback does not need it. */
 a,
-.sidebar-item a,
-nav.page-navigation a.pagination-link {
+#quarto-header .navbar .dropdown-item {
   transition: background-color 120ms ease;
 }
 

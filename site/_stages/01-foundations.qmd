@@ -1,7 +1,30 @@
 ---
-title: "Stage 1: Programming from first principles"
+title: "Programming from first principles"
+toc: false
 ---
 
-Python through transport data from the first cell: variables, types, collections, loops, conditionals and functions, then modules, imports and `pandas`. Engineering practice is part of the work from the start: reading a traceback, `assert`, the debugger and `pytest`. The dataset is STATS19 road collisions for one area over a few years, and the task is to read it, clean it and distrust it.
+Python through transport data from the first cell.
 
-Notebooks for this stage appear in the sidebar as they are published. Each one is readable here in full, with its code and output.
+::: {.cwai-grid}
+::: {.cwai-card}
+## What this stage covers
+
+Variables, types, collections, loops, conditionals and functions, then modules,
+imports and `pandas`.
+:::
+
+::: {.cwai-card}
+## What you will be able to do
+
+Read a traceback, write an `assert`, use the debugger and run `pytest`.
+Engineering practice is part of the work from the start, not an advanced topic
+kept for later.
+:::
+
+::: {.cwai-card}
+## The data you will use
+
+STATS19 road collisions for one area over a few years. The task is to read it,
+clean it and distrust it.
+:::
+:::

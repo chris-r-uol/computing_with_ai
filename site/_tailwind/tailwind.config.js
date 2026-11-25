@@ -70,6 +70,14 @@ module.exports = {
         "code-fg": "var(--cwai-code-fg)",
         edge: "var(--cwai-border)",
         focus: "var(--cwai-focus)",
+        // The top navbar is a dark surface in both themes, so its text, its
+        // accent and its focus ring are their own measured pairs rather than
+        // the page's colours reused on a ground they were never checked
+        // against. See PAIRS in tests/test_site.py.
+        "nav-surface": "var(--cwai-navbar-bg)",
+        "nav-ink": "var(--cwai-navbar-fg)",
+        "nav-accent": "var(--cwai-navbar-accent)",
+        "nav-focus": "var(--cwai-navbar-focus)",
       },
       fontFamily: {
         // Self-hosted nothing and fetched nothing: a web font would be either a

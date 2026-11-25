@@ -29,7 +29,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SITE_DIR = REPO_ROOT / "site"
 STUDENT_DIR = REPO_ROOT / "student"
 SITE_OUT = Path("_site")
-# The module's stage folders; each has a landing page in site/_stages/.
+# The module's stage folders; each has a landing page in site/_stages/, and a
+# navbar item in site/_quarto.yml pointing at it.
 STAGE_DIRS = (
     "00-warmup",
     "01-foundations",
@@ -38,6 +39,47 @@ STAGE_DIRS = (
     "04-project",
     "90-stretch",
 )
+
+# The eyebrow printed above the title of every page in a stage, including its
+# notebooks. It is the plain-text half of the navbar's "you are here": the
+# navbar marks the stage with colour and weight, this says it in words, and a
+# reader with no JavaScript still gets the second one.
+STAGE_EYEBROWS = {
+    "00-warmup": "Stage 0",
+    "01-foundations": "Stage 1",
+    "02-ai-accelerated": "Stage 2",
+    "03-machine-learning": "Stage 3",
+    "04-project": "Stage 4",
+    "90-stretch": "Optional",
+}
+
+# Quarto's listing, which is how a notebook is reached now that no sidebar
+# lists one. Added only to the stages that have notebooks: an empty listing
+# renders an invisible "No matching items" under a heading promising
+# notebooks, and warns on every render while it does it.
+_LISTING = """listing:
+  id: stage-notebooks
+  contents: "*.ipynb"
+  type: default
+  sort: "filename"
+  fields: [title, description]
+  sort-ui: false
+  filter-ui: false
+"""
+
+_NOTEBOOK_LIST = """
+## Notebooks in this stage
+
+::: {#stage-notebooks}
+:::
+"""
+
+_NO_NOTEBOOKS = """
+::: {.cwai-notice}
+**No notebooks here yet.** They appear on this page as they are published, each
+one readable in full, with its code and the output of running it.
+:::
+"""
 
 _LICENCE_NAMES = {
     "OGL-v3.0": "Open Government Licence v3.0",
@@ -89,6 +131,7 @@ def data_page() -> str:
     lines = [
         "---",
         "title: Data",
+        *_eyebrow_yaml("Reference").rstrip().split("\n"),
         "---",
         "",
         "Every dataset in this module, where it comes from and the licence it is",
@@ -121,16 +164,73 @@ def data_page() -> str:
     return "\n".join(lines)
 
 
+def _stage_page(source: Path, eyebrow: str, has_notebooks: bool) -> str:
+    """A stage landing page, composed from its authored half.
+
+    The authored half is ``site/_stages/<stage>.qmd``: the title and the cards
+    that say what the stage covers. The two things added here are the ones that
+    depend on what is actually in the folder -- the listing of its notebooks,
+    or the note saying there are none yet.
+
+    ``include-before-body`` is set here rather than in the folder's
+    ``_metadata.yml`` because a value set in both places does not merge: the
+    page's own front matter wins outright, and a stage page that happened to
+    need any other before-body content would silently lose its eyebrow.
+    """
+    text = source.read_text(encoding="utf-8")
+    opening, front, body = text.split("---", 2)
+    if opening.strip():
+        raise ValueError(f"{source}: expected YAML front matter at the top")
+    # strip(), not rstrip(): Pandoc reads the front matter only when the first
+    # line after the opening fence is YAML, and the split leaves a newline in
+    # front of it. A blank line there and the whole block renders as prose, in
+    # the middle of the page, which is what it did.
+    front = front.strip() + "\n" + _eyebrow_yaml(eyebrow)
+    if has_notebooks:
+        front += _LISTING
+        body = body.strip() + "\n" + _NOTEBOOK_LIST
+    else:
+        body = body.strip() + "\n" + _NO_NOTEBOOKS
+    return f"---\n{front}---\n\n{body}"
+
+
+def _eyebrow_yaml(eyebrow: str) -> str:
+    """The front-matter block that prints the eyebrow above a page's title.
+
+    Quarto puts ``include-before-body`` inside ``<main>`` immediately before
+    the title block, which is the one place an eyebrow can go without either a
+    template partial or a CSS reordering trick -- and a reordering trick would
+    mean a screen reader announcing the title before the label that qualifies
+    it.
+
+    A ``<div>`` rather than a ``<p>``, and that is not cosmetic: a listing
+    takes an item's description from the first paragraph of the rendered page
+    when the document declares none, so as a paragraph the eyebrow became
+    every notebook's description -- the stage listing read "Stage 1" under
+    every title.
+    """
+    return (
+        "include-before-body:\n"
+        "  text: |\n"
+        f'    <div class="cwai-eyebrow">{eyebrow}</div>\n'
+    )
+
+
 def _stage_notebooks(site_dir: Path, notebooks: Sequence[Path] | None) -> None:
     """Replace ``site_dir/notebooks`` with copies of the notebooks to publish."""
     target = site_dir / "notebooks"
     if target.exists():
         shutil.rmtree(target)
     for name in STAGE_DIRS:
-        # Quarto's sidebar globbing fails on an empty folder, so every stage
-        # folder carries its landing page.
+        # Every stage folder carries its landing page, which is what the
+        # navbar item for that stage points at.
         (target / name).mkdir(parents=True)
-        shutil.copy2(site_dir / "_stages" / f"{name}.qmd", target / name / "index.qmd")
+        # Quarto applies a folder's _metadata.yml to every document in it, so
+        # this is what puts the stage's eyebrow above each of its notebooks
+        # without touching the notebooks themselves.
+        (target / name / "_metadata.yml").write_text(
+            _eyebrow_yaml(STAGE_EYEBROWS[name]), encoding="utf-8"
+        )
     if notebooks is None:
         notebooks = sorted(
             p
@@ -150,6 +250,16 @@ def _stage_notebooks(site_dir: Path, notebooks: Sequence[Path] | None) -> None:
         dest = target / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, dest)
+    # Last, because each landing page says whether its stage has notebooks yet.
+    for name in STAGE_DIRS:
+        (target / name / "index.qmd").write_text(
+            _stage_page(
+                site_dir / "_stages" / f"{name}.qmd",
+                STAGE_EYEBROWS[name],
+                has_notebooks=any((target / name).glob("*.ipynb")),
+            ),
+            encoding="utf-8",
+        )
 
 
 def _quarto() -> str:

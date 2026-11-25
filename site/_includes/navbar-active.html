@@ -1,0 +1,77 @@
+<!--
+  Marks the navbar item for the stage the reader is currently inside.
+
+  Quarto marks a navbar item `active` only when its href is exactly the page
+  being rendered, so a stage landing page is marked and a notebook inside that
+  stage is not. On a site whose whole navigation is the navbar, that is the one
+  page where "you are here" matters most.
+
+  This only ever *adds* the marking Quarto left off, so a page Quarto already
+  marked is untouched. It is an enhancement, not the mechanism: the eyebrow
+  above every page title names the stage in text, so a reader with no
+  JavaScript loses a visual cue and nothing else.
+
+  Inline and served from this site: no request leaves the page, which
+  tests/test_site.py::test_pages_fetch_nothing_from_a_third_party requires.
+-->
+<script>
+  (function () {
+    // Trailing "index.html" and the directory it sits in are the same page,
+    // and Quarto's own navigation script rewrites navbar hrefs to the
+    // directory form at run time -- so both forms turn up, sometimes on the
+    // same page, and neither side of a comparison can be trusted raw.
+    function tidy(path) {
+      return path.replace(/index\.html$/, "");
+    }
+
+    function mark() {
+      var header = document.getElementById("quarto-header");
+      if (!header) return;
+      var here = window.location.pathname;
+
+      // A stage item points at that stage's landing page, so every page in
+      // the same directory is inside it. The dropdown toggle is excluded by
+      // name: its href is "#", which resolves to the page being read, so the
+      // directory test matches every page on the site and "Reference" came up
+      // marked on all of them.
+      var items = header.querySelectorAll(".navbar-nav a.nav-link[href]");
+      for (var i = 0; i < items.length; i++) {
+        var link = items[i];
+        if (link.classList.contains("active")) continue;
+        if (link.classList.contains("dropdown-toggle")) continue;
+        var url = new URL(link.href, window.location.href);
+        if (url.hash) continue;
+        var dir = tidy(url.pathname);
+        if (dir === "/" || dir.charAt(dir.length - 1) !== "/") continue;
+        if (here.indexOf(dir) !== 0) continue;
+        link.classList.add("active");
+        // "page" only when it really is this page; a stage holding the page
+        // being read is a section, and aria-current says "true" for that.
+        link.setAttribute("aria-current", tidy(here) === dir ? "page" : "true");
+      }
+
+      // A page reached from a dropdown ("Reference") leaves both the item and
+      // the menu that holds it unmarked.
+      var entries = header.querySelectorAll(".dropdown-menu a.dropdown-item[href]");
+      for (var j = 0; j < entries.length; j++) {
+        var entry = entries[j];
+        var target = new URL(entry.href, window.location.href);
+        if (target.hash || tidy(target.pathname) !== tidy(here)) continue;
+        entry.classList.add("active");
+        entry.setAttribute("aria-current", "page");
+        var menu = entry.closest(".nav-item.dropdown");
+        var toggle = menu && menu.querySelector("a.dropdown-toggle");
+        if (toggle) {
+          toggle.classList.add("active");
+          toggle.setAttribute("aria-current", "true");
+        }
+      }
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", mark);
+    } else {
+      mark();
+    }
+  })();
+</script>

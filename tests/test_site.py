@@ -14,7 +14,7 @@ from build_student_notebooks import (
     build,
     wrap_solution,
 )
-from render_site import SITE_OUT, STAGE_DIRS, render
+from render_site import SITE_OUT, STAGE_DIRS, STAGE_EYEBROWS, render
 from selfhost_assets import ASSETS, check, rewrite_html
 
 from cwai import registry
@@ -199,8 +199,21 @@ PAIRS = [
     ("border", "accent-soft", 3.0),
     ("focus", "bg", 3.0),
     ("focus", "surface", 3.0),
-    ("accent", "bg", 3.0),
-    ("accent", "surface", 3.0),
+    # 4.5, not 3: the accent stopped being a line colour only when the eyebrow
+    # above every page title was drawn in it. That is small text, and the
+    # threshold for small text is 4.5 whatever the colour is normally used for.
+    ("accent", "bg", 4.5),
+    ("accent", "surface", 4.5),
+    # The top navbar is a dark surface in both themes, so nothing measured
+    # against the page grounds says anything about the text on it.
+    ("navbar-fg", "navbar-bg", 4.5),
+    # Measured as text as well as as a mark: the active stage's underline is
+    # non-text, but the same token colours a navbar link on hover and focus.
+    ("navbar-accent", "navbar-bg", 4.5),
+    ("navbar-focus", "navbar-bg", 3.0),
+    # And the hairline that is the only thing separating the bar from the page
+    # in the dark theme, where the two fills are 1.04:1 apart.
+    ("border", "navbar-bg", 3.0),
 ]
 
 
@@ -344,7 +357,13 @@ SCSS_TO_TOKEN = {
     "code-color": "code-fg",
     "code-bg": "code-bg",
     "pre-color": "code-fg",
-    "navbar-bg": "bg",
+    # Quarto's three navbar variables. They used to be one, $navbar-bg, set to
+    # the page ground, because the navbar was not drawn. The bar is its own
+    # surface now and Bootstrap computes the collapsed menu, the toggler icon
+    # and the dropdown from these, so all three have to mirror a token.
+    "navbar-bg": "navbar-bg",
+    "navbar-fg": "navbar-fg",
+    "navbar-hl": "navbar-accent",
     "border-color": "border",
     "card-bg": "surface",
     "input-bg": "surface",
@@ -418,14 +437,28 @@ LOAD_BEARING_CSS = [
     ('each route card\'s "Choose this if ..." panel', ".route-when"),
     ("the current entry in the in-page contents list", "#TOC a.nav-link.active"),
     ("the accent rule under every section heading", "main.content h2::after"),
+    # The shell. Without these the navbar is Bootstrap's default bar, which is
+    # the page ground with no marking on it: the whole of "where am I in this
+    # course" disappears and nothing fails anywhere else.
+    ("the top navbar's own dark surface", "var(--cwai-navbar-bg)"),
+    (
+        "the stage you are in, marked on the navbar",
+        "#quarto-header .navbar .navbar-nav .nav-link.active::after",
+    ),
+    ("the eyebrow above every page title", ".cwai-eyebrow {"),
+    # The right rail is a stack of panels rather than a bare table of
+    # contents, which is what lets a progress panel join it later as an
+    # element rather than as a rewrite.
+    ("the right rail's panel stack", "#quarto-margin-sidebar > * {"),
+    ("the stage cards on the home page", ".cwai-stages {"),
+    ("a stage page's listing of its notebooks", "main.content .quarto-post {"),
     # WCAG 1.4.10. Each was found by measuring a 320px window, not by reading
     # the CSS, and each is the difference between a reachable search button and
     # one carried off the right-hand edge.
     ("reflow: the content column may shrink", "main.content {\n  min-width: 0;\n}"),
-    ("reflow: the breadcrumb may wrap", "#quarto-header nav.quarto-page-breadcrumbs,"),
     (
-        "reflow: previous/next may shrink",
-        "nav.page-navigation .nav-page {\n  min-width: 0;\n}",
+        "reflow: the navbar brand may shrink and wrap",
+        "#quarto-header .navbar .navbar-brand {\n  min-width: 0;\n}",
     ),
     # WCAG 1.4.1: body links carry an underline, so colour is not the only cue.
     ("body links are underlined", "text-underline-offset: 0.15em;"),
@@ -647,8 +680,9 @@ def test_the_config_turns_on_no_third_party_widget(site):
         "built-in search is served from this site"
     )
     # Non-vacuous: search is on, so this is a guard on how it is configured and
-    # not an artefact of there being no search at all.
-    assert config["website"]["sidebar"]["search"] is True
+    # not an artefact of there being no search at all. It lives on the navbar
+    # now; there is no sidebar to put it in.
+    assert config["website"]["navbar"]["search"] is True
     # And the rendered pages really do carry a search box built from this site.
     assert "quarto-search" in (site / "index.html").read_text()
 
@@ -753,13 +787,85 @@ def test_checks_workflow_verifies_the_generated_stylesheet():
     assert "scripts/build_tailwind.py --check" in workflow
 
 
-def test_every_stage_directory_has_a_sidebar_section():
-    """STAGE_DIRS and the Quarto sidebar are two lists that must stay in step."""
+def test_every_stage_directory_has_a_navbar_item():
+    """STAGE_DIRS and the navbar are two lists that must stay in step.
+
+    This guarded the sidebar until the sidebar was removed. The relation it
+    protects is unchanged and is now the only way into a stage: a stage folder
+    that no navbar item points at is a stage no reader can reach, and
+    scripts/render_site.py would still generate its landing page, so nothing
+    else on the site would look wrong.
+    """
     config = yaml.safe_load((SITE_SRC / "_quarto.yml").read_text())
+    navbar = config["website"]["navbar"]
     hrefs = {
         entry.get("href")
-        for entry in config["website"]["sidebar"]["contents"]
+        for side in ("left", "right")
+        for entry in navbar.get(side, [])
         if isinstance(entry, dict)
     }
     for stage in STAGE_DIRS:
         assert f"notebooks/{stage}/index.qmd" in hrefs, stage
+    # And the other direction: an item pointing at a folder STAGE_DIRS does
+    # not know about would be a 404, because nothing would generate it.
+    stage_hrefs = {h for h in hrefs if h and h.startswith("notebooks/")}
+    assert stage_hrefs == {f"notebooks/{stage}/index.qmd" for stage in STAGE_DIRS}
+
+
+def test_every_stage_has_an_eyebrow_label():
+    """The eyebrow is how a notebook page says which stage it belongs to.
+
+    A stage missing from STAGE_EYEBROWS raises at render time, which is the
+    right failure but a late one; a stage left in STAGE_EYEBROWS after its
+    folder went would never be noticed at all.
+    """
+    assert set(STAGE_EYEBROWS) == set(STAGE_DIRS)
+    assert all(STAGE_EYEBROWS[stage].strip() for stage in STAGE_DIRS)
+
+
+def test_a_notebook_page_names_the_stage_it_is_in(site):
+    """The plain-text half of the navbar's "you are here".
+
+    The marking on the navbar itself is added by a script, so this is the part
+    a reader gets with JavaScript off. It is written by Quarto's per-folder
+    metadata, which means a notebook added to the folder later inherits it
+    without anybody remembering to.
+    """
+    html = (site / "notebooks/01-foundations/00-smoke.html").read_text()
+    assert '<div class="cwai-eyebrow">Stage 1</div>' in html
+    # Before the <h1>, not after it: a screen reader should hear the label
+    # that qualifies the title before the title.
+    assert html.index('class="cwai-eyebrow"') < html.index('<h1 class="title"')
+
+
+def test_a_stage_page_links_to_the_notebooks_in_that_stage(site):
+    """Removing the sidebar removed the only list of a stage's notebooks.
+
+    The smoke test was reachable from the sidebar and from nowhere else. Each
+    stage landing page now carries a Quarto listing of its own folder, added
+    by scripts/render_site.py to the stages that have notebooks -- and if that
+    stops happening, a published notebook is simply unreachable while every
+    other test on this site stays green.
+    """
+    html = (site / "notebooks/01-foundations/index.html").read_text()
+    assert "Smoke test" in html
+    assert re.search(r'href="[^"]*00-smoke\.html"', html)
+    # A stage with no notebooks says so, rather than showing an empty listing.
+    empty = (site / "notebooks/00-warmup/index.html").read_text()
+    assert "No notebooks here yet" in empty
+    assert "quarto-listing" not in empty
+
+
+def test_the_navbar_marking_script_is_inline_and_optional():
+    """It is an enhancement, and it must not become a request.
+
+    An external script would be one more thing to fetch before the chrome is
+    right, on a connection where that is the whole problem; and the page has
+    to make sense without it, which is why the eyebrow exists.
+    """
+    include = SITE_SRC / "_includes" / "navbar-active.html"
+    config = yaml.safe_load((SITE_SRC / "_quarto.yml").read_text())
+    assert config["format"]["html"]["include-after-body"] == [
+        "_includes/navbar-active.html"
+    ]
+    assert not re.search(r"<script[^>]*\bsrc=", include.read_text())

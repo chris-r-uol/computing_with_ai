@@ -1,7 +1,22 @@
 ---
-title: "Stage 3: Direct machine learning"
+title: "Direct machine learning"
+toc: false
 ---
 
-Tensors, shapes and broadcasting, autograd and a training loop written by hand in PyTorch, then the same model in Keras for contrast. Train, validation and test sets, overfitting, and metrics that survive class imbalance.
+The frameworks themselves, not a wrapper around them.
 
-Notebooks for this stage appear in the sidebar as they are published. Each one is readable here in full, with its code and output.
+::: {.cwai-grid}
+::: {.cwai-card}
+## What this stage covers
+
+Tensors, shapes and broadcasting, autograd, and a training loop written by hand
+in PyTorch -- then the same model in Keras, for contrast.
+:::
+
+::: {.cwai-card}
+## What you will be able to do
+
+Split data into train, validation and test sets, recognise overfitting, and
+choose metrics that survive class imbalance.
+:::
+:::

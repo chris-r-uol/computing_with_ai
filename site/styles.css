@@ -32,6 +32,18 @@
   --cwai-border: #6b7b87;
   /* Amber in both themes, so "focus" is one idea and never the link colour. */
   --cwai-focus: #7a4400;
+  /* The top navbar is its own surface, dark in both themes, so every colour on
+     it is a separate pair to measure. In the light theme the bar is the ink
+     colour -- the same navy the body text is written in, not a new hue. */
+  --cwai-navbar-bg: #10212e;
+  --cwai-navbar-fg: #ffffff;
+  /* The accent, lightened to carry on a dark ground: the same petrol teal the
+     dark theme already uses for links, not a second accent hue. */
+  --cwai-navbar-accent: #6fd3e0;
+  /* Focus stays amber, but the light theme's amber is 2.1:1 on the dark bar,
+     which is a focus indicator nobody can see. The dark theme's amber is
+     11.4:1 there, so the bar borrows it in both themes. */
+  --cwai-navbar-focus: #ffd33d;
 }
 
 body.quarto-dark {
@@ -46,6 +58,13 @@ body.quarto-dark {
   --cwai-code-fg: #dfe8ef;
   --cwai-border: #8292a0;
   --cwai-focus: #ffd33d;
+  /* A shade below the page, so the bar is a bar and not a strip of page. It is
+     only 1.04:1 against the ground, which is why the bar carries a hairline in
+     --cwai-border: the edge is what separates it, not the fill. */
+  --cwai-navbar-bg: #0a121b;
+  --cwai-navbar-fg: #dfe8ef;
+  --cwai-navbar-accent: #6fd3e0;
+  --cwai-navbar-focus: #ffd33d;
 }
 
 /* Long URLs (the data page's source links) must wrap, not force sideways scroll
