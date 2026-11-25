@@ -16,8 +16,8 @@ def tree(tmp_path):
     licences = tmp_path / "LICENSES"
     licences.mkdir()
     for name in ("OGL-v3.0", "ODbL-1.0"):
-        (licences / f"{name}.txt").write_text(f"{name} text")
-    (tmp_path / "README.md").write_text("docs")
+        (licences / f"{name}.txt").write_text((f"{name} text"), encoding="utf-8")
+    (tmp_path / "README.md").write_text(("docs"), encoding="utf-8")
     return tmp_path
 
 
@@ -44,7 +44,7 @@ def test_missing_licence_text_is_reported(tree):
 
 
 def test_empty_licence_text_is_reported(tree):
-    (tree / "LICENSES" / "ODbL-1.0.txt").write_text("")
+    (tree / "LICENSES" / "ODbL-1.0.txt").write_text((""), encoding="utf-8")
     problems = check_licences.audit(tree)
     assert any("ODbL-1.0.txt" in p for p in problems)
 
@@ -57,7 +57,7 @@ def test_licence_not_in_use_needs_no_text(tree):
 
 
 def test_documentation_is_not_treated_as_unclaimed_data(tree):
-    (tree / "LICENSES" / "notes.txt").write_text("extra")
+    (tree / "LICENSES" / "notes.txt").write_text(("extra"), encoding="utf-8")
     assert check_licences.audit(tree) == []
 
 
@@ -81,7 +81,7 @@ def test_empty_directory_reports_everything_missing(tmp_path):
 
 def test_data_readme_documents_every_dataset(tmp_path):
     check_licences.write_readme(tmp_path)
-    text = (tmp_path / "README.md").read_text()
+    text = (tmp_path / "README.md").read_text(encoding="utf-8")
     for info in registry.list_datasets():
         assert info.title in text
         assert info.licence in text
@@ -93,5 +93,11 @@ def test_data_readme_documents_every_dataset(tmp_path):
 def test_data_readme_is_up_to_date():
     # Fails CI if the registry changed and the README was not regenerated.
     # Regenerate with: uv run python scripts/check_licences.py --write-readme
-    committed = (registry.data_root() / "README.md").read_text()
+    committed = (registry.data_root() / "README.md").read_text(encoding="utf-8")
     assert check_licences.readme_text() == committed
+
+
+def test_written_readme_is_utf8_regardless_of_locale(tmp_path):
+    check_licences.write_readme(tmp_path)
+    raw = (tmp_path / "README.md").read_bytes()
+    assert "©".encode() in raw
