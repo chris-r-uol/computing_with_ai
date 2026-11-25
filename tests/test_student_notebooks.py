@@ -7,6 +7,8 @@ from build_student_notebooks import (
     SOLUTION_MARKER,
     SOLUTION_TAG,
     STUB_MARKER,
+    TEXT_STUB,
+    SolutionMarkerError,
     build,
     main,
     strip_solutions,
@@ -146,3 +148,60 @@ def test_untagged_cells_are_never_stubbed(tags):
 
 def test_committed_student_notebooks_are_up_to_date():
     assert main(["--check"]) == 0
+
+
+@pytest.mark.parametrize("tags", [[], ["Solution"], ["solutions"]])
+def test_marker_in_a_cell_without_the_solution_tag_fails_fast(tags):
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [
+        nbformat.v4.new_code_cell(wrap_solution(SECRET), metadata={"tags": tags})
+    ]
+    with pytest.raises(SolutionMarkerError, match="solution"):
+        strip_solutions(nb)
+
+
+def test_build_and_check_report_a_mistagged_solution(tmp_path):
+    src, out = tmp_path / "notebooks", tmp_path / "student"
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [nbformat.v4.new_code_cell(wrap_solution(SECRET))]
+    write(nb, src / "s" / "a.ipynb")
+    assert main(["--src", str(src), "--out", str(out)]) == 2
+    assert main(["--src", str(src), "--out", str(out), "--check"]) == 2
+    assert not out.exists()
+
+
+def markdown_solution():
+    cell = nbformat.v4.new_markdown_cell(
+        wrap_solution("The answer is 42 ![](attachment:img.png)"),
+        metadata={"tags": [SOLUTION_TAG], "cwai": {"note": "secret"}},
+    )
+    cell["attachments"] = {"img.png": {"image/png": "SECRETBYTES"}}
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [cell]
+    return nb
+
+
+def test_markdown_solution_gets_a_note_not_a_heading():
+    cell = strip_solutions(markdown_solution()).cells[0]
+    assert cell.source == TEXT_STUB
+    assert not cell.source.startswith("#")
+
+
+def test_markdown_solution_loses_attachments_and_extra_metadata():
+    out = nbformat.writes(strip_solutions(markdown_solution()))
+    assert "SECRETBYTES" not in out
+    assert "attachments" not in out
+    assert "secret" not in out
+    assert SOLUTION_TAG in out
+
+
+def test_stripped_markdown_solution_is_a_fixed_point():
+    once = strip_solutions(markdown_solution())
+    assert strip_solutions(once) == once
+
+
+@pytest.mark.parametrize("flags", [[], ["--check"]])
+def test_missing_source_directory_is_an_error_not_a_pass(tmp_path, flags, capsys):
+    args = ["--src", str(tmp_path / "typo"), "--out", str(tmp_path / "o"), *flags]
+    assert main(args) != 0
+    assert "typo" in capsys.readouterr().err

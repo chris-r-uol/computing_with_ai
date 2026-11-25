@@ -28,6 +28,9 @@ import yaml
 SOLUTION_TAG = "solution"
 EXERCISE_TAG = "exercise"
 STUB_MARKER = "# your code here"
+# Markdown and raw solution cells get a note, not a code comment (which would
+# render as a heading).
+TEXT_STUB = "*Write your answer here.*"
 # The full notebooks wrap every solution source in this marker. The site render
 # test greps rendered HTML for it, so a stripping bug fails that test as well.
 SOLUTION_MARKER = "CWAI-SOLUTION"
@@ -37,6 +40,10 @@ REQUIRED_TIERS = ("nudge", "method")
 REPO_ROOT = Path(__file__).resolve().parent.parent
 NOTEBOOKS_DIR = REPO_ROOT / "notebooks"
 STUDENT_DIR = REPO_ROOT / "student"
+
+
+class SolutionMarkerError(ValueError):
+    """A cell holds the solution marker but is not tagged as a solution."""
 
 
 class MissingHintError(ValueError):
@@ -53,18 +60,31 @@ def _tags(cell) -> list[str]:
 
 
 def strip_solutions(nb: nbformat.NotebookNode) -> nbformat.NotebookNode:
-    """Return a copy with every solution cell reduced to ``STUB_MARKER``.
+    """Return a copy with every solution cell reduced to a stub.
 
-    Tags are kept, so stripping an already-stripped notebook is a no-op.
+    Tags are kept, so stripping an already-stripped notebook is a no-op. Outputs,
+    attachments and all metadata other than tags are dropped, as they can carry
+    the answer. Raises ``SolutionMarkerError`` if the solution marker appears in a
+    cell that lacks the ``solution`` tag: a mistyped tag would otherwise leak.
     """
     out = copy.deepcopy(nb)
-    for cell in out.cells:
-        if SOLUTION_TAG not in _tags(cell):
+    for index, cell in enumerate(out.cells):
+        tags = _tags(cell)
+        if SOLUTION_TAG not in tags:
+            if SOLUTION_MARKER in cell.source:
+                raise SolutionMarkerError(
+                    f"cell {index} contains {SOLUTION_MARKER} but its tags {tags} "
+                    f"do not include {SOLUTION_TAG!r} (tags are case-sensitive)"
+                )
             continue
-        cell.source = STUB_MARKER
+        cell.metadata = nbformat.from_dict({"tags": tags} if tags else {})
+        cell.pop("attachments", None)
         if cell.cell_type == "code":
+            cell.source = STUB_MARKER
             cell.outputs = []
             cell.execution_count = None
+        else:
+            cell.source = TEXT_STUB
     return out
 
 
@@ -80,6 +100,8 @@ def _source_notebooks(root: Path) -> list[Path]:
 
 def _expected(src_root: Path) -> dict[Path, bytes]:
     """Relative path -> the exact bytes the student notebook should contain."""
+    if not src_root.is_dir():
+        raise NotADirectoryError(f"notebook source directory not found: {src_root}")
     return {
         p.relative_to(src_root): _serialise(
             strip_solutions(nbformat.read(p, as_version=4))
@@ -195,6 +217,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    try:
+        return _run(args)
+    except (NotADirectoryError, SolutionMarkerError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+
+def _run(args: argparse.Namespace) -> int:
     if args.check:
         stale = stale_paths(args.src, args.out)
         for rel in stale:

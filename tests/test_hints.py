@@ -145,3 +145,11 @@ def test_notebook_with_exercises_but_no_hints_file_fails(tmp_path):
 
 def test_notebook_without_exercises_needs_no_hints_file(tmp_path):
     check_notebook_hints(lay_out(tmp_path, notebook(), None))
+
+
+@pytest.mark.parametrize("nudge", [None, "", "  "])
+def test_nudge_is_required_even_when_method_is_present(nudge):
+    tiers = {"method": "approach"} if nudge is None else {"nudge": nudge, "method": "m"}
+    with pytest.raises(MissingHintError) as exc:
+        validate_hints({"ex-1": tiers}, ["ex-1"])
+    assert "nudge" in str(exc.value) and "method" not in str(exc.value)

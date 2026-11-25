@@ -13,6 +13,14 @@ at least 2 cores and 8 GB of memory.
 **Local installation is unsupported.** Please open the repository in a
 Codespace rather than setting up Python on your own machine.
 
+## Which folder is mine?
+
+Work in **`student/`**. Its notebooks have the exercises with the answers
+removed, so you write the code yourself. `notebooks/` holds the full authoring
+copies with every solution in place: opening those instead quietly removes the
+exercise. Answers are open on purpose, so when you are stuck use the hint tiers
+on the site (nudge, then method, then code) before opening `notebooks/`.
+
 ## Maintenance
 
 CI has two workflows. `tests` runs lint, unit tests and the licence audit.
