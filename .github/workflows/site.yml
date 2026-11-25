@@ -29,7 +29,11 @@ jobs:
       - run: uv sync --all-groups
       - run: uv run ruff check .
       - run: uv run ruff format --check .
+      # CWAI_PUBLISH_GATE turns on the "no TODO left in the accessibility
+      # statement" test, so the site cannot deploy while it is unfinished.
       - run: uv run pytest
+        env:
+          CWAI_PUBLISH_GATE: "1"
       - run: uv run python scripts/build_student_notebooks.py --check
       - run: uv run python scripts/run_notebooks.py notebooks/
 

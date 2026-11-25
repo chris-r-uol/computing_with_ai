@@ -1,3 +1,4 @@
+import os
 import re
 import shutil
 from html import escape as html_escape
@@ -184,10 +185,32 @@ def test_styles_meet_wcag_aa_contrast(theme, selector):
         assert ratio >= minimum, f"{theme}: {fg} on {bg} is {ratio:.2f}:1"
 
 
-def test_accessibility_statement_has_visible_todo_and_no_unbacked_promises():
+def test_accessibility_statement_makes_no_response_time_promise():
+    assert "working days" not in (SITE_SRC / "accessibility.qmd").read_text()
+
+
+@pytest.mark.skipif(
+    not os.environ.get("CWAI_PUBLISH_GATE"),
+    reason="publication gate: only enforced by the site workflow",
+)
+def test_accessibility_statement_is_ready_to_publish():
+    """Fails while the contact TODO remains, so a green site build means it is done."""
     text = (SITE_SRC / "accessibility.qmd").read_text()
-    assert "TODO before publication" in text
-    assert "working days" not in text
+    assert "TODO" not in text, (
+        "add the accessibility contact route, then remove the TODO"
+    )
+
+
+def test_headings_never_skip_a_level(site):
+    for page in site.rglob("*.html"):
+        if "site_libs" in page.parts:
+            continue
+        html = page.read_text()
+        levels = [
+            int(n) for n in re.findall(r"<h([1-6])[ >]", html[html.find("<main") :])
+        ]
+        for before, after in zip(levels, levels[1:], strict=False):
+            assert after <= before + 1, f"{page}: h{before} then h{after}"
 
 
 def test_long_links_wrap_for_reflow():

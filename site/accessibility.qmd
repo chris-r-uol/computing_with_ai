@@ -15,19 +15,27 @@ Accessibility Regulations 2018 require.
 
 - Every page states its language, and passages in Chinese are marked as Chinese
   so that a screen reader pronounces them correctly.
-- Text and interface colours meet the AA contrast ratios (4.5:1 for text, 3:1 for
-  interface boundaries and focus indicators) in both the light and the dark
-  theme. You can switch theme with the toggle on each page.
-- Every link, button and the search box can be reached with the Tab key, in an
-  order that follows the page, and each shows a visible focus indicator (a 3 pixel
-  ring in both themes). A "skip to main content" link is the first stop.
-- Links are underlined as well as coloured, so colour is not the only cue.
-- Pages use headings in order, and each page has an in-page contents list.
+- The colour pairs defined in the site's stylesheet meet the AA contrast ratios
+  (4.5:1 for text, 3:1 for interface boundaries and focus indicators) in both
+  the light and the dark theme, and we checked the text on five pages against
+  those ratios in both themes. You can switch theme with the toggle on each page.
+- On the home page, every link, button and the search box can be reached with
+  the Tab key in an order that follows the page, and each shows a visible focus
+  indicator of at least 2 pixels, in both themes. A "skip to main content" link
+  is the first stop. Other pages use the same layout and components but we have
+  not walked them one by one.
+- Links in the body text are underlined as well as coloured, so colour is not the
+  only cue.
+- We checked the heading levels on every page and none skips a level. Pages that
+  have section headings also have an in-page contents list; short pages without
+  section headings do not.
 - Every notebook is published as an ordinary web page of text, code and output,
-  so a screen reader can read it from top to bottom.
-- At a window width of 640 pixels (a 1280 pixel window zoomed to 200%) and at 320
-  pixels (400%), the pages we checked reflow to one column with no sideways
-  scrolling, apart from code and tables, which scroll inside their own box.
+  not as an image or an embedded viewer.
+- We measured the width of every page we checked, with the browser window set to
+  640 pixels wide (as a 1280 pixel window at 200% zoom would be) and to 320
+  pixels (400%), and none needs sideways scrolling. This was a window-width
+  emulation, not real browser zoom, and it left out code blocks and tables, which
+  are meant to scroll inside their own box.
 
 ## Known limitations
 
