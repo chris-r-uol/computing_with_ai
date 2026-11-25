@@ -196,3 +196,13 @@ def test_passing_a_big_table_does_not_dump_it_into_the_message():
 def test_long_wrong_list_is_truncated_in_the_message(typed_checks):
     message = check("fx-list", list(range(5000))).message
     assert "..." in message and len(message) < 250
+
+
+def test_long_wrong_shape_is_truncated_in_the_message(typed_checks):
+    message = check("fx-shape", list(range(5000))).message
+    assert "..." in message and len(message) < 250
+
+
+def test_number_check_shows_a_string_the_student_typed():
+    message = check("demo-number", "42").message
+    assert "'42'" in message and "not a number" in message

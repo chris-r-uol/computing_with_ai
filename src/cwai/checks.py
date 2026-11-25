@@ -67,6 +67,16 @@ def _article(value: object) -> str:
     return f"{'an' if name[0] in 'AEIOU' else 'a'} {name}"
 
 
+_PLAIN_TYPES = (str, bytes, bool, int, float, type(None), list, tuple, dict)
+
+
+def _describe(value: object) -> str:
+    """Show small plain values as written ('42'), name anything else."""
+    if isinstance(value, _PLAIN_TYPES) and len(repr(value)) <= 60:
+        return repr(value)
+    return _article(value)
+
+
 def _compare(
     kind: str, expected: object, tolerance: float, value: object
 ) -> str | None:
@@ -75,7 +85,7 @@ def _compare(
         number = _plain(value)
         if isinstance(number, bool) or not isinstance(number, int | float):
             return (
-                f"Expected a number ({expected}) but found {_article(value)}, "
+                f"Expected a number ({expected}) but found {_describe(value)}, "
                 "which is not a number. Check that you are passing the result itself, "
                 "not text or a table."
             )
@@ -91,7 +101,7 @@ def _compare(
             return None
         return (
             f"Expected a shape of {tuple(expected)} but found "
-            f"{tuple(found) if isinstance(found, list) else _short(found)}. "
+            f"{_short(tuple(found) if isinstance(found, list) else found)}. "
             "Check how many rows and columns your result has."
         )
     found = _plain(value)
