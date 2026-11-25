@@ -1,0 +1,11 @@
+# Hints for the exercises in notebooks/01-foundations/.
+#
+# Keyed by the exercise id in each exercise cell's metadata.cwai.id. Every
+# exercise needs a `nudge` and a `method`; `code` is optional. See README.md.
+# No notebook in this stage has exercises yet; entries arrive with them:
+#
+# foundations-loops-1:
+#   nudge: ...
+#   method: ...
+#   code: |
+#     ...

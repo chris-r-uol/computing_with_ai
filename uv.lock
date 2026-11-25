@@ -379,6 +379,7 @@ dev = [
     { name = "nbclient" },
     { name = "nbformat" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "quarto-cli" },
     { name = "ruff" },
 ]
@@ -405,6 +406,7 @@ dev = [
     { name = "nbclient" },
     { name = "nbformat" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "quarto-cli", specifier = "==1.11.9" },
     { name = "ruff" },
 ]

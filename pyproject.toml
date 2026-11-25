@@ -34,6 +34,7 @@ dev = [
     "nbformat",
     "ipykernel",
     "jsonschema",
+    "pyyaml",
     "quarto-cli==1.11.9",
     "actionlint-py",
 ]
