@@ -1,0 +1,41 @@
+---
+title: "Glossary"
+---
+
+Technical terms in English with their Chinese equivalents. Lessons are taught in
+English, and vocabulary is often harder than grammar, so use this page whenever
+a word stops you.
+
+**This glossary grows with the material.** It currently holds the terms that
+Stage 1 (programming from first principles) needs. Each later stage adds its
+own.
+
+| English | 中文 | Meaning |
+|---|---|---|
+| variable | [变量]{lang="zh-Hans"} | A name that refers to a value, such as `speed = 30`. |
+| integer | [整数]{lang="zh-Hans"} | A whole number, such as 3 or -12. |
+| float | [浮点数]{lang="zh-Hans"} | A number with a decimal point, such as 3.14. |
+| string | [字符串]{lang="zh-Hans"} | Text in quotation marks, such as `"Leeds"`. |
+| Boolean | [布尔值]{lang="zh-Hans"} | A value that is either `True` or `False`. |
+| list | [列表]{lang="zh-Hans"} | An ordered collection of values that you can change. |
+| dictionary | [字典]{lang="zh-Hans"} | A collection of values you look up by a key rather than by position. |
+| index | [索引]{lang="zh-Hans"} | The position of an item in a list. Python starts counting at 0. |
+| loop | [循环]{lang="zh-Hans"} | Code that repeats, once for each item or until a condition changes. |
+| conditional | [条件语句]{lang="zh-Hans"} | An `if` statement: code that runs only when something is true. |
+| function | [函数]{lang="zh-Hans"} | A named, reusable piece of code that takes inputs and gives back a result. |
+| argument | [参数]{lang="zh-Hans"} | A value you pass into a function when you call it. |
+| scope | [作用域]{lang="zh-Hans"} | The part of the program where a name can be used. |
+| module | [模块]{lang="zh-Hans"} | A Python file whose code you can reuse in another file. |
+| package | [包]{lang="zh-Hans"} | A folder of modules, such as `pandas`. |
+| import | [导入]{lang="zh-Hans"} | To load a module or package so that your code can use it. |
+| DataFrame | [数据框]{lang="zh-Hans"} | A table of data with named columns, from the `pandas` package. |
+| missing value | [缺失值]{lang="zh-Hans"} | A cell with no data, shown as `NaN` in `pandas`. |
+| traceback | [回溯信息]{lang="zh-Hans"} | The message Python prints when code fails, showing where it failed. |
+| exception | [异常]{lang="zh-Hans"} | An error raised while the program runs, such as `ValueError`. |
+| assertion | [断言]{lang="zh-Hans"} | An `assert` line that stops the program if something you expect is false. |
+| debugger | [调试器]{lang="zh-Hans"} | A tool for running code one line at a time to see what it does. |
+| test | [测试]{lang="zh-Hans"} | Code that checks that other code gives the right answer. |
+| notebook | [笔记本]{lang="zh-Hans"} | A document that mixes text, code and the output of that code. |
+| cell | [单元格]{lang="zh-Hans"} | One block of text or code in a notebook. |
+| repository | [仓库]{lang="zh-Hans"} | A project folder whose history is tracked by Git. |
+| commit | [提交]{lang="zh-Hans"} | A saved snapshot of your project in Git, with a message. |

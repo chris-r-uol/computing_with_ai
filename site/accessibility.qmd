@@ -1,0 +1,64 @@
+---
+title: "Accessibility statement"
+---
+
+This statement applies to the Computing with AI course site, the reading copy of
+the material for the joint module between Southwest Jiaotong University and the
+University of Leeds. It was prepared on 25 November 2026.
+
+We want everyone on the module to be able to use this site. We aim to meet the
+Web Content Accessibility Guidelines, WCAG 2.2, level AA, which is the
+standard the UK Public Sector Bodies (Websites and Mobile Applications)
+Accessibility Regulations 2018 require.
+
+## What you can expect
+
+- Every page states its language, and passages in Chinese are marked as Chinese
+  so that a screen reader pronounces them correctly.
+- Text and interface colours meet the AA contrast ratios (4.5:1 for text, 3:1 for
+  interface boundaries and focus indicators) in both the light and the dark
+  theme. You can switch theme with the toggle on each page.
+- You can use the whole site with a keyboard. The focus indicator is always
+  visible.
+- Links are underlined as well as coloured, so colour is not the only cue.
+- Pages use headings in order, and each page has an in-page contents list.
+- Every notebook is published as an ordinary web page of text, code and output,
+  so a screen reader can read it from top to bottom.
+- You can zoom the page to 200% without losing content or function.
+
+## Known limitations
+
+This is our current position, and we will update it as the site changes.
+
+- **Not yet independently audited.** We have checked colour contrast
+  automatically and tested with a keyboard, but a full audit with assistive
+  technology has not yet been carried out. We therefore describe the site as
+  partially compliant until that audit is done.
+- **Charts and images in notebooks.** A figure produced by code may not have a
+  text description. Where a figure carries information, the surrounding text or
+  the code that draws it is meant to give the same information; where it does
+  not, that is a fault we want to hear about.
+- **Interactive widgets are not yet published.** The module will add
+  interactive explanations. Each will be built from ordinary page elements rather
+  than a drawing canvas, will work with a keyboard (for example arrow keys for a
+  slider), and will have a text version that presents the same information as a
+  table or as prose. This statement will be updated when the first one ships.
+- **Code output.** Wide tables and long lines of output scroll sideways inside
+  their own box rather than reflowing.
+
+## Tell us about a problem
+
+If you cannot use part of this site, or you need the material in another format,
+tell the module teaching team. Report a problem by opening an issue in the
+course repository, or tell your tutor. Say which page it is and what you were
+trying to do, and we will aim to reply within five working days.
+
+If you are not happy with our response and you are in the United Kingdom, you can
+contact the Equality Advisory and Support Service (EASS). In Northern Ireland,
+the Equality Commission for Northern Ireland is responsible for enforcement.
+
+## Technical information
+
+This site is built with Quarto and published on GitHub Pages. It relies on
+HTML, CSS and JavaScript. Its accessibility depends on the following
+technologies working with your browser and any assistive technology you use.

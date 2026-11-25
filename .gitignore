@@ -13,3 +13,10 @@ __pycache__/
 # Backups left by BSD sed -i
 *-E
 *.bak
+
+# Generated into the Quarto project at render time by scripts/render_site.py
+site/data.qmd
+site/notebooks/
+site/_freeze/
+site/.quarto/
+/.quarto/

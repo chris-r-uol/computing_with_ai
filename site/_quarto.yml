@@ -1,0 +1,60 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - "*.qmd"
+    - "notebooks/**/*.ipynb"
+
+# Every page declares its language (WCAG 3.1.1).
+lang: en
+
+# Do not re-run every notebook on every render; re-execute only what changed.
+execute:
+  enabled: true
+  freeze: auto
+
+website:
+  title: "Computing with AI"
+  description: "Python, AI-accelerated coding and machine learning for transport"
+  page-navigation: true
+  bread-crumbs: true
+  sidebar:
+    style: docked
+    search: true
+    contents:
+      - text: "Start here"
+        href: index.qmd
+      - section: "Stage 0: Warm-up"
+        href: notebooks/00-warmup/index.qmd
+        contents: notebooks/00-warmup/*
+      - section: "Stage 1: Programming from first principles"
+        href: notebooks/01-foundations/index.qmd
+        contents: notebooks/01-foundations/*
+      - section: "Stage 2: AI-accelerated and agentic workflows"
+        href: notebooks/02-ai-accelerated/index.qmd
+        contents: notebooks/02-ai-accelerated/*
+      - section: "Stage 3: Direct machine learning"
+        href: notebooks/03-machine-learning/index.qmd
+        contents: notebooks/03-machine-learning/*
+      - section: "Stage 4: Project"
+        href: notebooks/04-project/index.qmd
+        contents: notebooks/04-project/*
+      - section: "Stretch"
+        href: notebooks/90-stretch/index.qmd
+        contents: notebooks/90-stretch/*
+      - section: "Reference"
+        contents:
+          - data.qmd
+          - glossary.qmd
+          - accessibility.qmd
+
+format:
+  html:
+    theme:
+      light: [cosmo, theme-light.scss]
+      dark: [darkly, theme-dark.scss]
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    code-copy: true
+    smooth-scroll: false

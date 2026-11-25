@@ -1,0 +1,54 @@
+---
+title: "Computing with AI"
+---
+
+This is the reading copy of the course material for the joint module between
+Southwest Jiaotong University and the University of Leeds. It takes you from no
+Python to a small machine-learning project on real road-safety data, in four
+stages: programming from first principles, AI-accelerated and agentic
+workflows, direct machine learning, and a project of your own.
+
+Every notebook is published here **in full and readable**, with its code and
+its output. If something stops working on your computer or your connection, you
+can still read the lesson.
+
+## Two ways through the material
+
+Both routes cover the same material. Pick the one that suits you today, and
+know that you can switch at any point.
+
+::: {.route}
+### Codespace-first
+
+You work in your GitHub Codespace and run the notebooks there. You type the code,
+change it and see what happens. Use this site as **reference**: the
+[glossary](glossary.qmd), the [data page](data.qmd) and a second look at an
+explanation.
+
+Choose this if you are comfortable in a code editor and want to learn by doing.
+:::
+
+::: {.route}
+### Site-first
+
+You read each notebook here first, from top to bottom, then open the same
+notebook in the Codespace and run it. The Codespace is somewhere to type; the
+explanation is on this page.
+
+Choose this if you would rather understand a step before you try it, or if you
+are new to programming and want to see the result before you write any code.
+:::
+
+## If your Codespace will not connect
+
+Keep going on this site. Read the notebook, follow the output, and use the
+glossary for any word you do not know. Reconnect when you can and run the
+notebook then. You lose minutes, not a morning.
+
+## Where things are
+
+Use the sidebar to move between stages. The [data page](data.qmd) lists every
+dataset with its licence. The [glossary](glossary.qmd) gives each technical term
+in English and Chinese. The [accessibility statement](accessibility.qmd)
+explains how accessible this site is and what to do if something does not work
+for you.

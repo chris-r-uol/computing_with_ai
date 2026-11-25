@@ -1,0 +1,7 @@
+---
+title: "Stage 4: Project"
+---
+
+An open project on a question you choose, demonstrated live as a working notebook with a short presentation.
+
+Notebooks for this stage appear in the sidebar as they are published. Each one is readable here in full, with its code and output.

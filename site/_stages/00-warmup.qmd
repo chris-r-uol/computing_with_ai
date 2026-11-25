@@ -1,0 +1,7 @@
+---
+title: "Stage 0: Warm-up"
+---
+
+Getting your Codespace running and your first cell executed, before the course proper starts.
+
+Notebooks for this stage appear in the sidebar as they are published. Each one is readable here in full, with its code and output.

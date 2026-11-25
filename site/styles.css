@@ -1,0 +1,98 @@
+/*
+ * WCAG 2.2 AA colour tokens. Every foreground/background pair below is checked
+ * by tests/test_site.py: 4.5:1 for text, 3:1 for focus rings and borders.
+ * Change a value and the test tells you if the pair still passes.
+ */
+:root {
+  --cwai-bg: #ffffff;
+  --cwai-fg: #1f2328;
+  --cwai-muted: #57606a;
+  --cwai-link: #0550ae;
+  --cwai-code-bg: #f6f8fa;
+  --cwai-code-fg: #1f2328;
+  --cwai-border: #6e7781;
+  --cwai-focus: #0550ae;
+  --cwai-callout-bg: #eaf2fb;
+}
+
+body.quarto-dark {
+  --cwai-bg: #0d1117;
+  --cwai-fg: #e6edf3;
+  --cwai-muted: #a0aab6;
+  --cwai-link: #79b8ff;
+  --cwai-code-bg: #161b22;
+  --cwai-code-fg: #e6edf3;
+  --cwai-border: #8b949e;
+  --cwai-focus: #ffd33d;
+  --cwai-callout-bg: #11243d;
+}
+
+body {
+  background-color: var(--cwai-bg);
+  color: var(--cwai-fg);
+  line-height: 1.6;
+}
+
+a,
+.sidebar nav[role="doc-toc"] a,
+.sidebar-item a {
+  color: var(--cwai-link);
+}
+
+/* Links are told apart by more than colour (WCAG 1.4.1). */
+main a:not(.btn):not(.anchorjs-link) {
+  text-decoration: underline;
+}
+
+.text-muted,
+.quarto-title-meta-heading,
+.page-columns .toc-title,
+.sidebar-item .menu-text,
+.breadcrumb-item,
+.breadcrumb-item a,
+body .quarto-title-breadcrumbs .breadcrumb li:last-of-type a,
+body .nav-page .pagination-link,
+body .nav-page .nav-page-text {
+  color: var(--cwai-muted);
+}
+
+.sidebar-item a,
+.sidebar-item .menu-text {
+  color: var(--cwai-fg);
+}
+
+pre,
+code,
+div.sourceCode {
+  background-color: var(--cwai-code-bg);
+  color: var(--cwai-code-fg);
+}
+
+table th,
+table td {
+  border-color: var(--cwai-border);
+  color: var(--cwai-fg);
+}
+
+/* A visible keyboard focus indicator everywhere (WCAG 2.4.7, 2.4.11). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--cwai-focus);
+  outline-offset: 2px;
+}
+
+.callout {
+  background-color: var(--cwai-callout-bg);
+  color: var(--cwai-fg);
+}
+
+.route {
+  border: 2px solid var(--cwai-border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}

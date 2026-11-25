@@ -1,0 +1,7 @@
+---
+title: "Stage 2: AI-accelerated and agentic workflows"
+---
+
+Autocomplete first, then agentic coding, framed as generate, then interrogate: predict what the code will do before you run it, read the diff rather than the summary, and write the test that would catch it being wrong. The task is joining collisions to traffic counts to compute collision rates.
+
+Notebooks for this stage appear in the sidebar as they are published. Each one is readable here in full, with its code and output.
