@@ -1,0 +1,214 @@
+"""Load the course datasets as pandas / GeoPandas objects.
+
+Every notebook gets its data through this module. File locations, licences and
+attribution all come from ``cwai.registry``; nothing here hardcodes a path.
+
+The errors raised here are written for a beginner reading only the last line of
+a traceback, so each one says what is wrong and what to do next.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from pathlib import Path
+
+import geopandas as gpd
+import pandas as pd
+import pyarrow.parquet as pq
+import pyogrio
+
+from cwai import registry
+
+__all__ = [
+    "MissingDataError",
+    "YearNotAvailableError",
+    "available_years",
+    "describe",
+    "load_casualties",
+    "load_collisions",
+    "load_network",
+    "load_sensor_series",
+    "load_traffic_counts",
+    "load_vehicles",
+]
+
+# Which column holds the year, for the datasets that are split by year.
+_YEAR_COLUMNS = {
+    "collisions": "accident_year",
+    "casualties": "accident_year",
+    "vehicles": "accident_year",
+    "traffic-counts": "year",
+}
+
+# The command that (re)creates each dataset's file, shown when it is missing.
+_BUILD_HINTS = {
+    "collisions": "scripts/build_subsets.py",
+    "casualties": "scripts/build_subsets.py",
+    "vehicles": "scripts/build_subsets.py",
+    "traffic-counts": "scripts/build_subsets.py",
+    "network-leeds": "scripts/build_osm.py",
+    "network-chengdu": "scripts/build_osm.py",
+    "sensor-clean": "scripts/make_synthetic.py",
+    "sensor-faulty": "scripts/make_synthetic.py",
+}
+
+_NETWORK_PLACES = {"leeds": "network-leeds", "chengdu": "network-chengdu"}
+_SENSOR_VARIANTS = {"clean": "sensor-clean", "faulty": "sensor-faulty"}
+
+
+class MissingDataError(FileNotFoundError):
+    """A dataset's file has not been built on this machine."""
+
+
+class YearNotAvailableError(ValueError):
+    """A requested year is not in the dataset."""
+
+
+def _path(key: str) -> Path:
+    return registry.data_root() / registry.get(key).relpath
+
+
+def _require(key: str) -> Path:
+    """Return the dataset's file path, or raise ``MissingDataError``."""
+    info = registry.get(key)
+    path = _path(key)
+    if not path.is_file():
+        raise MissingDataError(
+            f"The {info.title} dataset ('{key}') has not been built on this "
+            f"computer yet, so there is nothing to load. Expected to find it at "
+            f"{path}. To create it, run {_BUILD_HINTS[key]}. "
+            f"If you did not expect to see this "
+            f"message, ask your tutor: your data folder may be incomplete."
+        )
+    return path
+
+
+def _read(key: str) -> pd.DataFrame:
+    return pd.read_parquet(_require(key))
+
+
+def _year_column(key: str) -> str:
+    try:
+        return _YEAR_COLUMNS[key]
+    except KeyError:
+        by_year = ", ".join(sorted(_YEAR_COLUMNS))
+        raise ValueError(
+            f"The '{key}' dataset is not split by year. Only these datasets "
+            f"are: {by_year}."
+        ) from None
+
+
+def _as_list(years: Sequence[int] | int) -> list[int]:
+    # years=2022 is an easy slip; accept it rather than fail on iterating an int.
+    return [years] if isinstance(years, int) else list(years)
+
+
+def _load_by_year(key: str, years: Sequence[int] | None) -> pd.DataFrame:
+    df = _read(key)
+    if years is None:
+        return df
+    wanted = _as_list(years)
+    column = _year_column(key)
+    have = sorted(int(y) for y in df[column].dropna().unique())
+    # Check before filtering: an absent year must be an error, never an empty
+    # frame, because zero rows read as "no collisions happened".
+    absent = sorted(set(wanted) - set(have))
+    if not wanted or absent:
+        available = ", ".join(str(y) for y in have)
+        if not wanted:
+            problem = "You passed an empty list of years, which selects nothing."
+        else:
+            asked = ", ".join(str(y) for y in absent)
+            problem = f"No data for year {asked} in the '{key}' dataset."
+        raise YearNotAvailableError(
+            f"{problem} Years available: {available}. Pick from those, or "
+            f"leave out the years argument to load all of them."
+        )
+    return df[df[column].isin(wanted)].reset_index(drop=True)
+
+
+def load_collisions(years: Sequence[int] | None = None) -> pd.DataFrame:
+    """STATS19 collisions, one row each, optionally for chosen years."""
+    return _load_by_year("collisions", years)
+
+
+def load_casualties(years: Sequence[int] | None = None) -> pd.DataFrame:
+    """STATS19 casualties, one row per injured person, optionally by year."""
+    return _load_by_year("casualties", years)
+
+
+def load_vehicles(years: Sequence[int] | None = None) -> pd.DataFrame:
+    """STATS19 vehicles, one row per vehicle, optionally by year."""
+    return _load_by_year("vehicles", years)
+
+
+def load_traffic_counts(years: Sequence[int] | None = None) -> pd.DataFrame:
+    """DfT AADF traffic counts, optionally for chosen years."""
+    return _load_by_year("traffic-counts", years)
+
+
+def load_network(place: str = "leeds", layer: str = "edges") -> gpd.GeoDataFrame:
+    """A city's road network: ``layer`` is "edges" (roads) or "stations"."""
+    if place not in _NETWORK_PLACES:
+        places = ", ".join(repr(p) for p in _NETWORK_PLACES)
+        raise registry.UnknownDatasetError(
+            f"There is no road network for {place!r}. Available places: {places}."
+        )
+    path = _require(_NETWORK_PLACES[place])
+    layers = [str(name) for name, _ in pyogrio.list_layers(path)]
+    if layer not in layers:
+        names = ", ".join(repr(name) for name in layers)
+        raise ValueError(
+            f"The {place} network has no layer called {layer!r}. "
+            f"Available layers: {names}."
+        )
+    return gpd.read_file(path, layer=layer)
+
+
+def load_sensor_series(variant: str = "clean") -> pd.DataFrame:
+    """Synthetic sensor readings: the "clean" baseline or the "faulty" copy."""
+    if variant not in _SENSOR_VARIANTS:
+        options = ", ".join(repr(v) for v in _SENSOR_VARIANTS)
+        raise ValueError(
+            f"There is no sensor variant {variant!r}. Choose one of: {options}."
+        )
+    return _read(_SENSOR_VARIANTS[variant])
+
+
+def available_years(key: str) -> list[int]:
+    """The years present in a year-split dataset, in order."""
+    column = _year_column(key)
+    path = _require(key)
+    years = pd.read_parquet(path, columns=[column])[column]
+    return sorted(int(y) for y in years.dropna().unique())
+
+
+def _row_count(key: str, path: Path) -> int:
+    if path.suffix == ".parquet":
+        return pq.ParquetFile(path).metadata.num_rows
+    # A GeoPackage: the roads layer is what "rows" means for a network.
+    return int(pyogrio.read_info(path, layer="edges")["features"])
+
+
+def describe(key: str) -> str:
+    """A short paragraph on what a dataset is, its size, licence and credit."""
+    info = registry.get(key)
+    path = _path(key)
+    if path.is_file():
+        size = f"It currently holds {_row_count(key, path):,} rows"
+        if key in _YEAR_COLUMNS:
+            years = available_years(key)
+            size += f", covering {years[0]} to {years[-1]}"
+        size += "."
+    else:
+        size = (
+            f"It has not been built on this computer yet; run "
+            f"{_BUILD_HINTS[key]} to create it."
+        )
+    return (
+        f"{info.title} ('{key}')\n\n"
+        f"{info.description} {size}\n\n"
+        f"Licence: {info.licence}. If you publish anything using this data, "
+        f"include this credit: {info.attribution}\n"
+        f"Source: {info.source_url}"
+    )
