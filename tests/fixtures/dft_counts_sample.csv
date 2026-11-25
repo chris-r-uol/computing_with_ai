@@ -1,0 +1,30 @@
+count_point_id,year,region_name,local_authority_name,local_authority_code,road_name,road_type,latitude,longitude,estimation_method,pedal_cycles,cars_and_taxis,buses_and_coaches,lgvs,all_hgvs,all_motor_vehicles,fixture_note
+10000,2021,Yorkshire and The Humber,Leeds,E08000035,A58,Major,53.8,-1.55,Estimated,40,12000,300,2400,1000,15700,"in area, in range"
+10001,2022,Yorkshire and The Humber,Bradford,E08000032,M62,Major,53.793,-1.746,Counted,40,12731,300,2546,1060,16637,"in area, in range"
+10002,2023,Yorkshire and The Humber,Kirklees,E08000034,A647,Major,53.656,-1.772,Estimated,40,13462,300,2692,1121,17575,"in area, in range"
+10003,2024,Yorkshire and The Humber,Calderdale,E08000033,A650,Major,53.729,-1.848,Counted,40,14193,300,2838,1182,18513,"in area, in range"
+10004,2025,Yorkshire and The Humber,Wakefield,E08000036,A61,Major,53.692,-1.484,Estimated,40,14924,300,2984,1243,19451,"in area, in range"
+10005,2021,Yorkshire and The Humber,Leeds,E08000035,A58,Major,53.815,-1.53,Counted,40,15655,300,3131,1304,20390,"in area, in range"
+10006,2022,Yorkshire and The Humber,Bradford,E08000032,M62,Major,53.808,-1.726,Estimated,40,16386,300,3277,1365,21328,"in area, in range"
+10007,2023,Yorkshire and The Humber,Kirklees,E08000034,A647,Major,53.671,-1.752,Counted,40,17117,300,3423,1426,22266,"in area, in range"
+10008,2024,Yorkshire and The Humber,Calderdale,E08000033,A650,Major,53.744,-1.828,Estimated,40,17848,300,3569,1487,23204,"in area, in range"
+10009,2025,Yorkshire and The Humber,Wakefield,E08000036,A61,Major,53.707,-1.464,Counted,40,18579,300,3715,1548,24142,"in area, in range"
+10010,2021,Yorkshire and The Humber,Leeds,E08000035,A58,Major,53.83,-1.51,Estimated,40,19310,300,3862,1609,25081,"in area, in range"
+10011,2022,Yorkshire and The Humber,Bradford,E08000032,M62,Major,53.823,-1.706,Counted,40,20041,300,4008,1670,26019,"in area, in range"
+10012,2023,Yorkshire and The Humber,Kirklees,E08000034,A647,Major,53.686,-1.732,Estimated,40,20772,300,4154,1731,26957,"in area, in range"
+10013,2024,Yorkshire and The Humber,Calderdale,E08000033,A650,Major,53.759,-1.808,Counted,40,21503,300,4300,1791,27894,"in area, in range"
+10014,2025,Yorkshire and The Humber,Wakefield,E08000036,A61,Major,53.722,-1.444,Estimated,40,22234,300,4446,1852,28832,"in area, in range"
+10015,2021,Yorkshire and The Humber,Leeds,E08000035,A58,Major,53.845,-1.49,Counted,40,22965,300,4593,1913,29771,"in area, in range"
+10016,2022,Yorkshire and The Humber,Bradford,E08000032,M62,Major,53.838,-1.686,Estimated,40,23696,300,4739,1974,30709,"in area, in range"
+10017,2023,Yorkshire and The Humber,Kirklees,E08000034,A647,Major,53.701,-1.712,Counted,40,24427,300,4885,2035,31647,"in area, in range"
+10018,2024,Yorkshire and The Humber,Calderdale,E08000033,A650,Major,53.774,-1.788,Estimated,40,25158,300,5031,2096,32585,"in area, in range"
+10019,2025,Yorkshire and The Humber,Wakefield,E08000036,A61,Major,53.737,-1.424,Counted,40,25889,300,5177,2157,33523,"in area, in range"
+20001,2022,Elsewhere,Manchester,E08000003,A56,Major,53.48,-2.24,Estimated,40,15000,300,3000,1250,19550,OUT of area: Manchester
+20002,2023,Elsewhere,Sheffield,E08000019,A61,Major,53.38,-1.47,Estimated,40,14000,300,2800,1166,18266,OUT of area: Sheffield
+20003,2021,Elsewhere,Hartlepool,E06000001,A689,Major,54.69,-1.21,Estimated,40,9000,300,1800,750,11850,OUT of area: Hartlepool
+20004,2024,Elsewhere,Westminster,E09000033,A4,Major,51.5,-0.14,Estimated,40,25000,300,5000,2083,32383,OUT of area: Westminster
+30001,2015,Yorkshire and The Humber,Leeds,E08000035,A58,Major,53.8,-1.55,Estimated,40,11000,300,2200,916,14416,OUT of range: 2015
+30002,2019,Yorkshire and The Humber,Bradford,E08000032,A650,Major,53.79,-1.75,Estimated,40,10000,300,2000,833,13133,OUT of range: 2019
+30003,2000,Yorkshire and The Humber,Wakefield,E08000036,M62,Major,53.68,-1.5,Estimated,40,18000,300,3600,1500,23400,OUT of range: 2000
+40001,2023,Yorkshire and The Humber,Kirklees,E08000034,A62,Major,,,Estimated,,,300,,,,in area; counts and coordinates missing (blank)
+40002,2025,Yorkshire and The Humber,Calderdale,E08000033,A646,Major,53.72,-1.86,Counted,12,8100,300,1620,675,10695,"in area, latest year"

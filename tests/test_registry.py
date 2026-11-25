@@ -106,7 +106,7 @@ def test_dataset_info_is_frozen():
 
 def test_area_and_years():
     assert registry.AREA == "west-yorkshire"
-    assert registry.YEARS == (2018, 2019, 2020, 2021, 2022, 2023)
+    assert registry.YEARS == (2021, 2022, 2023, 2024, 2025)
 
 
 def test_data_root_is_repo_data_dir_and_need_not_exist():

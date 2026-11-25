@@ -12,12 +12,13 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+from cwai.registry import YEARS
+
 _STATS19 = "https://data.dft.gov.uk/road-accidents-safety-data"
 _AADF = "https://storage.googleapis.com/dft-statistics/road-traffic/downloads/data-gov-uk"
 
-# Per-year STATS19 files are the narrowest that cover 2018-2023. The DfT page
-# currently lists per-year files for 2021 onwards only; the 2018-2020 names
-# follow the same pattern but were NOT confirmed against the published page.
+# Per-year STATS19 files are the narrowest download. DfT publishes them for
+# 2021 onwards only, which is what sets cwai.registry.YEARS.
 SOURCES: dict[str, str] = {
     f"{table}-{year}": f"{_STATS19}/dft-road-casualty-statistics-{stem}-{year}.csv"
     for table, stem in (
@@ -25,7 +26,7 @@ SOURCES: dict[str, str] = {
         ("casualties", "casualty"),
         ("vehicles", "vehicle"),
     )
-    for year in range(2018, 2024)
+    for year in YEARS
 }
 # AADF count-point file, all years, all directions combined (about 19.5 MB).
 SOURCES["aadf"] = f"{_AADF}/dft_traffic_counts_aadf.zip"

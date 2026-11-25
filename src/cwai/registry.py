@@ -10,7 +10,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 AREA = "west-yorkshire"
-YEARS = (2018, 2019, 2020, 2021, 2022, 2023)
+# The span is set by what DfT publishes as per-year STATS19 files (2021 onwards;
+# earlier years only come inside multi-gigabyte bundles). Provisional pending a
+# decision from the module lead: change it here and nowhere else.
+YEARS = (2021, 2022, 2023, 2024, 2025)
 
 ALLOWED_LICENCES = frozenset({"OGL-v3.0", "ODbL-1.0", "CC-BY-SA-4.0", "generated"})
 

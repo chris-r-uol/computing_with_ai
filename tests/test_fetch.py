@@ -4,6 +4,7 @@ import json
 import pytest
 
 import fetch as fetch_module
+from cwai.registry import YEARS
 from fetch import SOURCES, fetch, record_provenance, sha256
 
 NAME = "collisions-2021"
@@ -34,7 +35,7 @@ def _serve(monkeypatch, payload: bytes):
 
 def test_sources_cover_study_years_for_each_stats19_table():
     for table in ("collisions", "casualties", "vehicles"):
-        for year in range(2018, 2024):
+        for year in YEARS:
             assert f"{table}-{year}" in SOURCES
     assert "aadf" in SOURCES
     assert all(u.startswith("https://") for u in SOURCES.values())
