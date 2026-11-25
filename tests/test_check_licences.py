@@ -97,7 +97,7 @@ def test_data_readme_is_up_to_date():
     assert check_licences.readme_text() == committed
 
 
-def test_written_readme_is_utf8_regardless_of_locale(tmp_path):
+def test_written_readme_is_utf8_encoded(tmp_path):
     check_licences.write_readme(tmp_path)
     raw = (tmp_path / "README.md").read_bytes()
     assert "©".encode() in raw
@@ -128,31 +128,19 @@ def test_stray_attribution_elsewhere_is_still_reported(tree):
     )
 
 
-def test_allow_missing_suppresses_only_the_missing_file_problem(tmp_path):
-    # Empty tree: every dataset missing and every licence text missing.
-    strict = check_licences.audit(tmp_path)
-    relaxed = check_licences.audit(tmp_path, allow_missing=True)
-    assert not any("is missing (dataset" in p for p in relaxed)
-    assert any("is missing (dataset" in p for p in strict)
-    # The licence-text check is still live.
-    assert any("LICENSES/" in p for p in relaxed)
-
-
-def test_allow_missing_still_reports_unclaimed_files(tree):
-    (tree / "stats19" / "collisions.parquet").unlink()
-    (tree / "mystery.parquet").write_bytes(b"x")
-    problems = check_licences.audit(tree, allow_missing=True)
-    assert any("mystery.parquet" in p for p in problems)
-    assert not any("collisions" in p for p in problems)
-
-
-def test_allow_missing_still_enforces_budget(tree):
-    (tree / "big.bin").write_bytes(b"x" * BUDGET_BYTES)
-    problems = check_licences.audit(tree, allow_missing=True)
-    assert any("budget" in p for p in problems)
-
-
-def test_main_flag_is_opt_in(monkeypatch, tmp_path, capsys):
+def test_main_fails_on_an_incomplete_tree(monkeypatch, tmp_path):
     monkeypatch.setattr(check_licences.registry, "data_root", lambda: tmp_path)
     assert check_licences.main([]) == 1
-    assert check_licences.main(["--allow-missing"]) == 1  # licences still absent
+
+
+def test_main_passes_on_a_clean_tree(monkeypatch, tree):
+    monkeypatch.setattr(check_licences.registry, "data_root", lambda: tree)
+    assert check_licences.main([]) == 0
+
+
+def test_the_audit_has_no_way_to_tolerate_a_missing_dataset(tree):
+    """All eight datasets are vendored; the audit is strict everywhere."""
+    (tree / "stats19" / "collisions.parquet").unlink()
+    with pytest.raises(TypeError):
+        check_licences.audit(tree, allow_missing=True)
+    assert any("collisions" in p for p in check_licences.audit(tree))

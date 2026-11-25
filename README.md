@@ -34,6 +34,3 @@ weekly run exists for, so check the Actions tab now and then. If the schedule ha
 been disabled, re-enable it there (Actions, `notebooks`, Enable workflow), or run
 it by hand with "Run workflow" (both workflows support `workflow_dispatch`). Any
 commit to the repository also resets the clock.
-
-The licence audit runs with `--allow-missing` while the real datasets are not yet
-vendored; remove that flag in `.github/workflows/tests.yml` once they are.

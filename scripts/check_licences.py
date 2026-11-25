@@ -6,7 +6,6 @@ repository can be published under its open licences with a clear conscience.
 Usage:
     uv run python scripts/check_licences.py                 # audit data/
     uv run python scripts/check_licences.py --write-readme  # regenerate README
-    uv run python scripts/check_licences.py --allow-missing # tolerate unbuilt datasets
 """
 
 from __future__ import annotations
@@ -32,12 +31,11 @@ def _is_documentation(relpath: Path) -> bool:
     return relpath == Path(README) or relpath.parts[0] == LICENCES_DIR
 
 
-def audit(data_dir: Path, *, allow_missing: bool = False) -> list[str]:
+def audit(data_dir: Path) -> list[str]:
     """Return human-readable problems with ``data_dir``; empty when it is clean.
 
-    ``allow_missing`` suppresses only the "registered file is missing" problem,
-    for trees where some registered datasets are not built yet. Every other check
-    stays live.
+    Every registered dataset must be present: all eight are vendored, so a
+    missing file means a broken checkout or a registry entry nothing builds.
     """
     problems: list[str] = []
     datasets = registry.list_datasets()
@@ -81,8 +79,6 @@ def audit(data_dir: Path, *, allow_missing: bool = False) -> list[str]:
             )
 
     for info in datasets:
-        if allow_missing:
-            break
         if not (data_dir / info.relpath).is_file():
             problems.append(
                 f"data/{info.relpath} is missing (dataset '{info.key}'). "
@@ -163,7 +159,7 @@ def main(argv: list[str] | None = None) -> int:
         write_readme(root)
         print(f"Wrote {root / README}")
         return 0
-    problems = audit(root, allow_missing="--allow-missing" in args)
+    problems = audit(root)
     for problem in problems:
         print(f"PROBLEM: {problem}", file=sys.stderr)
     if problems:

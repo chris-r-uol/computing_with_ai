@@ -28,7 +28,4 @@ jobs:
       - run: uv run pytest
       # Student notebooks are generated from the full ones; fail if they have drifted.
       - run: uv run python scripts/build_student_notebooks.py --check
-      # --allow-missing: the real STATS19, AADF and OSM files are not vendored yet,
-      # so their absence is tolerated. Remove the flag once they are built.
-      # Every other check (unclaimed files, licences, size budget) stays live.
-      - run: uv run python scripts/check_licences.py --allow-missing
+      - run: uv run python scripts/check_licences.py
