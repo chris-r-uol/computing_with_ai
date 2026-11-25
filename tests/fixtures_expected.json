@@ -1,0 +1,5 @@
+{
+  "fx-string": {"type": "string", "value": "Leeds"},
+  "fx-list": {"type": "list", "value": [1, 2, 3]},
+  "fx-shape": {"type": "shape", "value": [3, 2]}
+}

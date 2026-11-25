@@ -2,10 +2,12 @@ import json
 from pathlib import Path
 
 import jsonschema
+import numpy as np
 import pandas as pd
 import pytest
 from make_synthetic import make_sensor_series, write_all
 
+from cwai import checks as checks_module
 from cwai import registry
 from cwai.checks import (
     TOLERANCE,
@@ -112,3 +114,57 @@ def test_committed_clean_data_matches_regenerated(tmp_path):
     regenerated = pd.read_parquet(tmp_path / relpath)
     pd.testing.assert_frame_equal(regenerated, committed, check_exact=True)
     pd.testing.assert_frame_equal(make_sensor_series(), committed, check_exact=True)
+
+
+FIXTURE = Path(__file__).parent / "fixtures_expected.json"
+
+
+@pytest.fixture
+def typed_checks(monkeypatch):
+    """Point check() at a fixture holding one entry per answer type."""
+    monkeypatch.setattr(checks_module, "_EXPECTED_PATH", FIXTURE)
+    assert set(load_expected(FIXTURE)) == {"fx-string", "fx-list", "fx-shape"}
+
+
+def test_fixture_validates_against_schema():
+    jsonschema.validate(load_expected(FIXTURE), json.loads(SCHEMA.read_text()))
+
+
+def test_string_check_passes_on_exact_match(typed_checks):
+    assert check("fx-string", "Leeds")
+
+
+def test_string_check_failure_names_expected_and_found(typed_checks):
+    result = check("fx-string", "leeds")
+    assert not result
+    assert "'Leeds'" in result.message and "'leeds'" in result.message
+    assert "Expected the text" in result.message
+
+
+def test_list_check_passes_for_list_tuple_and_numpy(typed_checks):
+    assert check("fx-list", [1, 2, 3])
+    assert check("fx-list", (1, 2, 3))
+    assert check("fx-list", np.array([1, 2, 3]))
+
+
+def test_list_check_failure_names_expected_and_found(typed_checks):
+    result = check("fx-list", [1, 2, 4])
+    assert not result
+    assert "[1, 2, 3]" in result.message and "[1, 2, 4]" in result.message
+    assert "Expected the list" in result.message
+
+
+def test_list_check_is_order_sensitive(typed_checks):
+    assert not check("fx-list", [3, 2, 1])
+
+
+def test_shape_check_passes_for_dataframe_and_tuple(typed_checks):
+    assert check("fx-shape", pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}))
+    assert check("fx-shape", (3, 2))
+
+
+def test_shape_check_failure_names_expected_and_found(typed_checks):
+    result = check("fx-shape", pd.DataFrame({"a": [1, 2]}))
+    assert not result
+    assert "(3, 2)" in result.message and "(2, 1)" in result.message
+    assert "Expected a shape" in result.message
