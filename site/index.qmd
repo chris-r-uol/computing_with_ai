@@ -2,10 +2,9 @@
 title: "Computing with AI"
 ---
 
-This is the reading copy of the course material for the joint module between
-Southwest Jiaotong University and the University of Leeds. It takes you from no
-Python to a small machine-learning project on real road-safety data, in four
-stages: programming from first principles, AI-accelerated and agentic
+This is the reading copy of the Computing with AI course material. It takes you
+from no Python to a small machine-learning project on real road-safety data, in
+four stages: programming from first principles, AI-accelerated and agentic
 workflows, direct machine learning, and a project of your own.
 
 Every notebook is **readable here**, with its explanations, its code and the
