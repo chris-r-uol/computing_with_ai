@@ -9,7 +9,10 @@ set -euo pipefail
 pip install --user uv
 export PATH="$HOME/.local/bin:$PATH"
 
-uv sync --all-groups
+# --frozen: install exactly what uv.lock records, the versions CI tested.
+# Not --locked, which CI uses: a stale lock must fail a CI run, but it must not
+# fail a student's first Codespace at step one, with nothing they can do.
+uv sync --frozen --all-groups
 
 # Smoke check: Quarto is installed from PyPI (quarto-cli) in the dev group
 uv run quarto --version
