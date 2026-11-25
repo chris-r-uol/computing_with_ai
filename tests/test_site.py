@@ -1,5 +1,6 @@
 import re
 import shutil
+from html import escape as html_escape
 from pathlib import Path
 
 import nbformat
@@ -117,8 +118,8 @@ def test_data_page_carries_required_attribution_strings(site):
     assert "Open Government Licence v3.0" in html
     assert "OpenStreetMap contributors" in html
     for info in registry.list_datasets():
-        # Attribution is read from the registry, not retyped; HTML-escape aside.
-        assert info.attribution.replace("©", "©") in html
+        # Attribution is read from the registry, not retyped.
+        assert html_escape(info.attribution, quote=False) in html
 
 
 def test_every_page_declares_a_language(site):
@@ -181,3 +182,14 @@ def test_styles_meet_wcag_aa_contrast(theme, selector):
     for fg, bg, minimum in PAIRS:
         ratio = contrast(tokens[fg], tokens[bg])
         assert ratio >= minimum, f"{theme}: {fg} on {bg} is {ratio:.2f}:1"
+
+
+def test_accessibility_statement_has_visible_todo_and_no_unbacked_promises():
+    text = (SITE_SRC / "accessibility.qmd").read_text()
+    assert "TODO before publication" in text
+    assert "working days" not in text
+
+
+def test_long_links_wrap_for_reflow():
+    css = (SITE_SRC / "styles.css").read_text()
+    assert "overflow-wrap: anywhere" in css

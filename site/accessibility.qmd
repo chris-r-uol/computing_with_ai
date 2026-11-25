@@ -18,22 +18,32 @@ Accessibility Regulations 2018 require.
 - Text and interface colours meet the AA contrast ratios (4.5:1 for text, 3:1 for
   interface boundaries and focus indicators) in both the light and the dark
   theme. You can switch theme with the toggle on each page.
-- You can use the whole site with a keyboard. The focus indicator is always
-  visible.
+- Every link, button and the search box can be reached with the Tab key, in an
+  order that follows the page, and each shows a visible focus indicator (a 3 pixel
+  ring in both themes). A "skip to main content" link is the first stop.
 - Links are underlined as well as coloured, so colour is not the only cue.
 - Pages use headings in order, and each page has an in-page contents list.
 - Every notebook is published as an ordinary web page of text, code and output,
   so a screen reader can read it from top to bottom.
-- You can zoom the page to 200% without losing content or function.
+- At a window width of 640 pixels (a 1280 pixel window zoomed to 200%) and at 320
+  pixels (400%), the pages we checked reflow to one column with no sideways
+  scrolling, apart from code and tables, which scroll inside their own box.
 
 ## Known limitations
 
 This is our current position, and we will update it as the site changes.
 
-- **Not yet independently audited.** We have checked colour contrast
-  automatically and tested with a keyboard, but a full audit with assistive
-  technology has not yet been carried out. We therefore describe the site as
-  partially compliant until that audit is done.
+- **Not yet independently audited, and testing so far is limited.** On
+  25 November 2026 we checked colour contrast on five pages in both themes with
+  an automated script, walked the home page with the Tab key in both themes, and
+  checked reflow at 640 and 320 pixels on six pages, all in one Chromium-based
+  browser. We did not walk every page with the keyboard (the others share the
+  home page's layout and components), did not test text-only zoom, other
+  browsers, or any screen reader, and did not run a full audit with assistive
+  technology. We therefore describe the site as partially compliant.
+- **Stage pages.** Stages with no published notebooks are not listed in the
+  sidebar yet. Their landing pages can be reached through the previous and next
+  links at the foot of the page.
 - **Charts and images in notebooks.** A figure produced by code may not have a
   text description. Where a figure carries information, the surrounding text or
   the code that draws it is meant to give the same information; where it does
@@ -49,9 +59,16 @@ This is our current position, and we will update it as the site changes.
 ## Tell us about a problem
 
 If you cannot use part of this site, or you need the material in another format,
-tell the module teaching team. Report a problem by opening an issue in the
-course repository, or tell your tutor. Say which page it is and what you were
-trying to do, and we will aim to reply within five working days.
+tell the module teaching team. Say which page it is and what you were trying to
+do.
+
+::: {.callout-warning}
+## TODO before publication: add the contact route
+
+The module lead must name a real contact here (an email address or the course
+repository's issue tracker) and state any response time they are willing to
+commit to. Do not publish this statement until that is done.
+:::
 
 If you are not happy with our response and you are in the United Kingdom, you can
 contact the Equality Advisory and Support Service (EASS). In Northern Ireland,

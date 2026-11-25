@@ -96,3 +96,10 @@ textarea:focus-visible,
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
 }
+
+/* Long URLs (the data page's source links) must wrap, not force sideways scroll
+   at 320px (WCAG 1.4.10 reflow). */
+main a,
+main code {
+  overflow-wrap: anywhere;
+}

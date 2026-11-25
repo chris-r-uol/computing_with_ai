@@ -29,7 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SITE_DIR = REPO_ROOT / "site"
 STUDENT_DIR = REPO_ROOT / "student"
 SITE_OUT = Path("_site")
-# The module's stage folders; each has a landing page in site/stages/.
+# The module's stage folders; each has a landing page in site/_stages/.
 STAGE_DIRS = (
     "00-warmup",
     "01-foundations",
