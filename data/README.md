@@ -80,7 +80,7 @@ The same made-up sensor readings with faults such as stuck values and dropouts a
 
 ### DfT annual average daily flow (AADF) traffic counts
 
-Yearly estimates of how many vehicles of each type use each counted stretch of road on an average day, published by the Department for Transport.
+Yearly estimates of how many vehicles of each type use each counted stretch of road on an average day, published by the Department for Transport. Unlike the collision tables, this dataset spans every published year rather than only recent ones: the earlier years give the pre-COVID baseline and the 2020 collapse in traffic, which the collision data cannot show.
 
 - File: `dft-counts/aadf.parquet`
 - Licence: OGL-v3.0

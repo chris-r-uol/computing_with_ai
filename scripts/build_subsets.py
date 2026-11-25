@@ -163,7 +163,7 @@ def _raise_if_empty(
     kept: pd.DataFrame,
     raw: pd.DataFrame,
     source: Path,
-    year_col: str,
+    year_col: str | None,
     area_col: str | None = None,
     accident_index: pd.Series | None = None,
 ) -> None:
@@ -177,7 +177,7 @@ def _raise_if_empty(
             f"codes {sorted(WEST_YORKSHIRE_ONS)}; "
             f"values found: {_found(raw[area_col])}."
         )
-    if not raw[year_col].isin(registry.YEARS).any():
+    if year_col and not raw[year_col].isin(registry.YEARS).any():
         parts.append(
             f"Column {year_col!r} has no year in {registry.YEARS}; "
             f"values found: {_found(raw[year_col])}."
@@ -194,7 +194,10 @@ def _raise_if_empty(
 
 
 def _require_years(df: pd.DataFrame, col: str, label: str) -> None:
-    """Raise if ``df`` does not cover every year in ``registry.YEARS``."""
+    """Raise unless every year in ``registry.YEARS`` is present in ``df``.
+
+    Other years are allowed: the counts deliberately keep earlier ones.
+    """
     missing = sorted(set(registry.YEARS) - set(df[col].dropna()))
     if missing:
         raise ValueError(
@@ -251,11 +254,17 @@ def build_vehicles(
 
 
 def build_counts(raw_csv: Path, out: Path) -> pd.DataFrame:
-    """AADF traffic counts for West Yorkshire in ``registry.YEARS``."""
+    """AADF traffic counts for West Yorkshire, in every published year.
+
+    Years are deliberately not filtered to ``registry.YEARS``: the earlier years
+    carry the pre-COVID baseline and the 2020 collapse that the collision
+    tables (2021 onwards) cannot show. ``registry.YEARS`` must still all be
+    present, which catches a partial download.
+    """
     # road_type is a name ("Major"/"Minor") here but a numeric code in STATS19.
     raw = _read(raw_csv, COUNT_COLUMNS, text=frozenset({"road_type"}))
-    df = raw[_in_years(raw.year) & raw.local_authority_code.isin(WEST_YORKSHIRE_ONS)]
-    _raise_if_empty(df, raw, raw_csv, "year", "local_authority_code")
+    df = raw[raw.local_authority_code.isin(WEST_YORKSHIRE_ONS)]
+    _raise_if_empty(df, raw, raw_csv, None, "local_authority_code")
     _require_years(df, "year", str(raw_csv))
     return _write(df, out)
 

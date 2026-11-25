@@ -126,11 +126,13 @@ def test_vehicles_follow_the_collision_subset(tmp_path):
     assert df.accident_index.isin(collisions.accident_index).all()
 
 
-def test_counts_keep_only_target_area_and_years(tmp_path):
+def test_counts_keep_target_area_and_every_year(tmp_path):
     df = build_counts(COUNTS, tmp_path / "a.parquet")
-    assert set(df.year) <= set(YEARS)
     assert set(df.local_authority_code) <= WEST_YORKSHIRE_ONS
-    assert len(df) == 22
+    # Earlier years (the pre-COVID baseline) must survive, not be filtered out.
+    assert {2000, 2015, 2019} <= set(df.year)
+    assert set(YEARS) <= set(df.year)
+    assert len(df) == 25
     stored = pd.read_parquet(tmp_path / "a.parquet")
     assert stored.dtypes.to_dict() == df.dtypes.to_dict()
 
