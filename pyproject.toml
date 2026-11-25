@@ -36,3 +36,7 @@ dev = [
     "quarto-cli==1.11.9",
     "actionlint-py",
 ]
+
+[tool.pytest.ini_options]
+# scripts/ is not a package; let tests import the standalone tools in it.
+pythonpath = ["scripts"]
