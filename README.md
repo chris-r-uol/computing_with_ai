@@ -36,8 +36,9 @@ other two call rather than restating.
 - `notebooks` executes every notebook in a fresh kernel, on the same triggers
   and **weekly on Mondays**. A second job in the weekly run re-resolves the
   dependencies from `pyproject.toml` instead of installing `uv.lock`, which is
-  what catches a dependency drifting under material nobody has touched; it
-  reports separately and does not fail the workflow.
+  what catches a dependency drifting under material nobody has touched. It is a
+  separate job, so a red run tells you which half broke, and it does fail the
+  run: a failed run is the only thing GitHub notifies anybody about.
 - `site` builds the Quarto site and publishes it to GitHub Pages on a push to
   `main`. It runs the same check list first with `CWAI_PUBLISH_GATE=1`, which
   turns on the checks that only a publication has to pass — today, that the

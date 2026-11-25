@@ -129,6 +129,21 @@ def test_schema_rejects_tolerance_on_anything_but_a_number(kind, value):
         jsonschema.validate(bad, json.loads(SCHEMA.read_text()))
 
 
+@pytest.mark.parametrize(
+    "answer", [[1, 2, 3], (1, 2, 3), np.array([1, 2, 3]), pd.Series([1, 2, 3])]
+)
+def test_a_list_entry_accepts_any_sequence(typed_checks, answer):
+    """Documented in checks/README.md: the JavaScript must accept these too."""
+    assert check("fx-list", answer)
+
+
+@pytest.mark.parametrize(
+    "answer", [pd.DataFrame({"a": [1, 2, 3], "b": [1, 2, 3]}), [3, 2], (3, 2)]
+)
+def test_a_shape_entry_accepts_a_shaped_result_or_a_bare_pair(typed_checks, answer):
+    assert check("fx-shape", answer)
+
+
 def test_checks_readme_states_the_comparison_contract():
     """The JavaScript author reads this file, so it must not go missing."""
     text = (SCHEMA.parent / "README.md").read_text(encoding="utf-8")
@@ -137,6 +152,11 @@ def test_checks_readme_states_the_comparison_contract():
         "order-sensitive",
         "two-element array",
         "including case",
+        # _compare normalises sequences and reads .shape when there is one;
+        # a JS author following a README that omitted either would disagree
+        # with the notebook on an answer the notebook accepts.
+        "accepts any sequence",
+        "carrying its own shape",
     ):
         assert required in text, required
 

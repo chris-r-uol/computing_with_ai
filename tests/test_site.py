@@ -190,6 +190,10 @@ def test_accessibility_statement_makes_no_response_time_promise():
     assert "working days" not in (SITE_SRC / "accessibility.qmd").read_text()
 
 
+# Read the gate with .get() truthiness, never `"CWAI_PUBLISH_GATE" in
+# os.environ`: checks.yml sets the variable to an empty string on every caller
+# that is not publishing, so an `in` check would arm the gate on every pull
+# request and fail it on a statement nobody is about to publish.
 @pytest.mark.skipif(
     not os.environ.get("CWAI_PUBLISH_GATE"),
     reason="publication gate: only enforced by the site workflow",

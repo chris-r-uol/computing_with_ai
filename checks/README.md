@@ -32,8 +32,22 @@ The rules, in full:
 - **Lists are order-sensitive and compared exactly.** `[1, 2]` does not match
   `[2, 1]`, and no tolerance is applied to the numbers inside a list. Sort the
   list in the notebook if the order should not matter.
-- **`shape` is a two-element array**, `[rows, columns]`, and is compared against
-  the result's own shape. Both elements must match exactly.
+- **A `list` entry accepts any sequence, not one exact type.** Before comparing,
+  the Python side turns anything with a `tolist()` method, and any tuple, into a
+  plain list, so a tuple `(1, 2, 3)`, a numpy array and a pandas Series all match
+  `[1, 2, 3]`. Do the same in JavaScript: accept the array-likes your runtime has
+  rather than demanding one exact type, or an answer the notebook accepts will be
+  marked wrong on the page.
+- **`shape` is a two-element array**, `[rows, columns]`, and both elements must
+  match exactly.
+- **A `shape` entry accepts either a result carrying its own shape or a bare
+  pair.** The Python side reads `value.shape` when there is one and compares
+  `value` itself when there is not, so a DataFrame matches and so do a plain
+  `[3, 2]` and `(3, 2)`. Accept both; a JavaScript implementation that insisted
+  on a `.shape` property would reject the bare pair the notebook allows. (One
+  Python-side edge, with no JavaScript equivalent: a numpy array *is* a pair but
+  carries its own `.shape` of `(2,)`, so `np.array([3, 2])` is read as that shape
+  and fails. Pass a list or a tuple.)
 - **Strings match including case**, and including leading and trailing spaces.
   `"Leeds"` does not match `"leeds"`.
 - **Numbers and booleans are different things.** `true` is not an acceptable
