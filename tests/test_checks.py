@@ -139,6 +139,7 @@ def test_string_check_failure_names_expected_and_found(typed_checks):
     assert not result
     assert "'Leeds'" in result.message and "'leeds'" in result.message
     assert "Expected the text" in result.message
+    assert "capital letters" in result.message and "item by item" not in result.message
 
 
 def test_list_check_passes_for_list_tuple_and_numpy(typed_checks):
@@ -168,3 +169,30 @@ def test_shape_check_failure_names_expected_and_found(typed_checks):
     assert not result
     assert "(3, 2)" in result.message and "(2, 1)" in result.message
     assert "Expected a shape" in result.message
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        {"type": "number", "value": "abc"},
+        {"type": "string", "value": 5},
+        {"type": "list", "value": "not a list"},
+        {"type": "shape", "value": [3]},
+        {"type": "shape", "value": [3, "x"]},
+        {"type": "shape", "value": [3, 2, 1]},
+    ],
+)
+def test_schema_rejects_value_that_does_not_match_type(entry):
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate({"x": entry}, json.loads(SCHEMA.read_text()))
+
+
+def test_passing_a_big_table_does_not_dump_it_into_the_message():
+    big = pd.DataFrame({"a": range(5000)})
+    message = check("demo-number", big).message
+    assert "DataFrame" in message and len(message) < 200
+
+
+def test_long_wrong_list_is_truncated_in_the_message(typed_checks):
+    message = check("fx-list", list(range(5000))).message
+    assert "..." in message and len(message) < 250

@@ -55,6 +55,18 @@ def _plain(value: object) -> object:
     return list(value) if isinstance(value, tuple) else value
 
 
+def _short(value: object, limit: int = 60) -> str:
+    """repr(value), cut short so a whole table never lands in an error message."""
+    text = repr(value)
+    return text if len(text) <= limit else text[: limit - 3] + "..."
+
+
+def _article(value: object) -> str:
+    """'a DataFrame', 'a str': name what was passed instead of printing it."""
+    name = type(value).__name__
+    return f"{'an' if name[0] in 'AEIOU' else 'a'} {name}"
+
+
 def _compare(
     kind: str, expected: object, tolerance: float, value: object
 ) -> str | None:
@@ -63,8 +75,8 @@ def _compare(
         number = _plain(value)
         if isinstance(number, bool) or not isinstance(number, int | float):
             return (
-                f"Expected a number ({expected}) but found {value!r}, which is not a "
-                "number. Check that you are passing the result itself, "
+                f"Expected a number ({expected}) but found {_article(value)}, "
+                "which is not a number. Check that you are passing the result itself, "
                 "not text or a table."
             )
         if math.isclose(number, expected, rel_tol=0, abs_tol=tolerance):
@@ -79,16 +91,19 @@ def _compare(
             return None
         return (
             f"Expected a shape of {tuple(expected)} but found "
-            f"{tuple(found) if isinstance(found, list) else found!r}. "
+            f"{tuple(found) if isinstance(found, list) else _short(found)}. "
             "Check how many rows and columns your result has."
         )
     found = _plain(value)
     if found == expected:
         return None
-    noun = "list" if kind == "list" else "text"
+    if kind == "list":
+        noun, advice = "list", "Compare them item by item"
+    else:
+        noun, advice = "text", "Check the spelling, capital letters and spaces"
     return (
-        f"Expected the {noun} {expected!r} but found {found!r}. "
-        "Compare them item by item, fix your answer, and run the cell again."
+        f"Expected the {noun} {expected!r} but found {_short(found)}. "
+        f"{advice}, fix your answer, and run the cell again."
     )
 
 

@@ -10,6 +10,33 @@
       "type": {"enum": ["number", "string", "list", "shape"]},
       "value": {},
       "tolerance": {"type": "number", "minimum": 0}
-    }
+    },
+    "allOf": [
+      {
+        "if": {"properties": {"type": {"const": "number"}}},
+        "then": {"properties": {"value": {"type": "number"}}}
+      },
+      {
+        "if": {"properties": {"type": {"const": "string"}}},
+        "then": {"properties": {"value": {"type": "string"}}}
+      },
+      {
+        "if": {"properties": {"type": {"const": "list"}}},
+        "then": {"properties": {"value": {"type": "array"}}}
+      },
+      {
+        "if": {"properties": {"type": {"const": "shape"}}},
+        "then": {
+          "properties": {
+            "value": {
+              "type": "array",
+              "items": {"type": "integer"},
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        }
+      }
+    ]
   }
 }
