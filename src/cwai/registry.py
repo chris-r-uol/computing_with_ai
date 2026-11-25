@@ -180,11 +180,20 @@ def list_datasets() -> list[DatasetInfo]:
     return [REGISTRY[key] for key in sorted(REGISTRY)]
 
 
-def data_root() -> Path:
-    """Return the repository's ``data/`` directory (it need not exist yet)."""
+def repo_root() -> Path:
+    """Return the repository root: the directory that holds ``pyproject.toml``.
+
+    Walk up rather than counting directories, so an installed copy, an editable
+    install and a plain source checkout all resolve to the same place.
+    """
     here = Path(__file__).resolve()
     for parent in here.parents:
         if (parent / "pyproject.toml").is_file():
-            return parent / "data"
+            return parent
     # Source layout: <repo>/src/cwai/registry.py
-    return here.parents[2] / "data"
+    return here.parents[2]
+
+
+def data_root() -> Path:
+    """Return the repository's ``data/`` directory (it need not exist yet)."""
+    return repo_root() / "data"

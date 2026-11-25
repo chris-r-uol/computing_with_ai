@@ -115,3 +115,20 @@ def test_data_root_is_repo_data_dir_and_need_not_exist():
     assert isinstance(root, Path)
     assert root.name == "data"
     assert (root.parent / "pyproject.toml").is_file()
+
+
+def test_repo_root_is_found_by_walking_up_not_by_counting():
+    root = registry.repo_root()
+    assert (root / "pyproject.toml").is_file()
+    assert registry.data_root() == root / "data"
+
+
+def test_everything_that_needs_the_repo_root_agrees_on_it():
+    """One way up to the repository root, not a fixed parents[] index per module."""
+    import fetch
+
+    from cwai import checks
+
+    root = registry.repo_root()
+    assert checks._EXPECTED_PATH == root / "checks" / "expected.json"
+    assert fetch.raw_root() == root / "raw"

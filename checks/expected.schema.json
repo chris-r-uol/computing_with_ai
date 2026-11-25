@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Self-check expected answers",
+  "description": "Two implementations read this file: src/cwai/checks.py and the site's JavaScript. checks/README.md states the comparison contract they must agree on. Note that tolerance is permitted only on a number entry, because that is the only entry the comparator applies it to.",
   "type": "object",
   "additionalProperties": {
     "type": "object",
@@ -13,8 +14,12 @@
     },
     "allOf": [
       {
-        "if": {"properties": {"type": {"const": "number"}}},
-        "then": {"properties": {"value": {"type": "number"}}}
+        "if": {
+          "required": ["type"],
+          "properties": {"type": {"const": "number"}}
+        },
+        "then": {"properties": {"value": {"type": "number"}}},
+        "else": {"properties": {"tolerance": false}}
       },
       {
         "if": {"properties": {"type": {"const": "string"}}},

@@ -84,6 +84,12 @@ def test_expect_shape_ignores_unspecified_dimension():
     expect_shape(pd.DataFrame({"a": [1, 2]}), cols=1)
 
 
+def test_expect_shape_with_nothing_to_check_is_an_error():
+    # It used to pass silently, so a student got a tick for nothing.
+    with pytest.raises(ValueError, match="rows"):
+        expect_shape(pd.DataFrame({"a": [1, 2]}))
+
+
 def test_expected_json_validates_against_schema():
     jsonschema.validate(load_expected(), json.loads(SCHEMA.read_text()))
 
@@ -98,6 +104,41 @@ def test_schema_rejects_unsupported_type():
     bad = {"x": {"type": "matrix", "value": 1}}
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(bad, json.loads(SCHEMA.read_text()))
+
+
+def test_schema_allows_tolerance_on_a_number():
+    jsonschema.validate(
+        {"x": {"type": "number", "value": 1.0, "tolerance": 0.01}},
+        json.loads(SCHEMA.read_text()),
+    )
+
+
+@pytest.mark.parametrize(
+    ("kind", "value"),
+    [("list", [1, 2]), ("string", "Leeds"), ("shape", [3, 2])],
+)
+def test_schema_rejects_tolerance_on_anything_but_a_number(kind, value):
+    """The comparator honours tolerance for numbers only.
+
+    Permitting it elsewhere would invite the site's JavaScript author to
+    implement a tolerance the Python side ignores, and a student would see the
+    notebook say "wrong" and the site say "right".
+    """
+    bad = {"x": {"type": kind, "value": value, "tolerance": 0.5}}
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(bad, json.loads(SCHEMA.read_text()))
+
+
+def test_checks_readme_states_the_comparison_contract():
+    """The JavaScript author reads this file, so it must not go missing."""
+    text = (SCHEMA.parent / "README.md").read_text(encoding="utf-8")
+    for required in (
+        "tolerance",
+        "order-sensitive",
+        "two-element array",
+        "including case",
+    ):
+        assert required in text, required
 
 
 def test_committed_clean_data_matches_regenerated(tmp_path):

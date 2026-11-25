@@ -1,8 +1,10 @@
 """Self-checks: let a student test an answer against a known truth.
 
 Answers live in ``checks/expected.json``, which the website's JavaScript reads
-too; its shape is pinned by ``checks/expected.schema.json``. Every message a
-student can see says what was expected, what was found, and what to do next.
+too; its shape is pinned by ``checks/expected.schema.json`` and the comparison
+rules both implementations must follow are written down in ``checks/README.md``.
+Every message a student can see says what was expected, what was found, and
+what to do next.
 """
 
 from __future__ import annotations
@@ -14,9 +16,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from cwai import registry
+
 TOLERANCE = 1e-6
 
-_EXPECTED_PATH = Path(__file__).resolve().parents[2] / "checks" / "expected.json"
+_EXPECTED_PATH = registry.repo_root() / "checks" / "expected.json"
 
 
 class UnknownCheckError(KeyError):
@@ -154,6 +158,12 @@ def expect_columns(df, columns: Iterable[str]) -> None:
 
 def expect_shape(df, rows: int | None = None, cols: int | None = None) -> None:
     """Raise CheckFailed unless the table has the stated rows and/or columns."""
+    if rows is None and cols is None:
+        # Otherwise this passes silently and a student gets a tick for nothing.
+        raise ValueError(
+            "expect_shape needs something to check: pass rows=, cols=, or both, "
+            "as in expect_shape(df, rows=12) or expect_shape(df, rows=12, cols=3)."
+        )
     found_rows, found_cols = df.shape
     wanted, found = [], []
     if rows is not None and found_rows != rows:

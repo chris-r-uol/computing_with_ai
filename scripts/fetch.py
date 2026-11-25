@@ -71,7 +71,7 @@ TIMEOUT = 60
 
 def raw_root() -> Path:
     """The repository's gitignored ``raw/`` directory (it need not exist yet)."""
-    return registry.data_root().parent / "raw"
+    return registry.repo_root() / "raw"
 
 
 def sha256(path: Path) -> str:
