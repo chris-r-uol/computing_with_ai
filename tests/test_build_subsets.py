@@ -133,3 +133,127 @@ def test_counts_keep_only_target_area_and_years(tmp_path):
     assert len(df) == 22
     stored = pd.read_parquet(tmp_path / "a.parquet")
     assert stored.dtypes.to_dict() == df.dtypes.to_dict()
+
+
+# --- guards against silently empty or shrunken subsets ---------------------
+
+
+def _with_column(src, tmp_path, column, transform, name="mod.csv"):
+    df = pd.read_csv(src, dtype=str, keep_default_na=False)
+    df[column] = transform(df[column])
+    out = tmp_path / name
+    df.to_csv(out, index=False)
+    return out
+
+
+def test_collisions_raise_when_district_codes_match_nothing(tmp_path):
+    bad = _with_column(
+        FIXTURE, tmp_path, "local_authority_ons_district", lambda s: s.str.lower()
+    )
+    out = tmp_path / "c.parquet"
+    with pytest.raises(ValueError) as err:
+        build_collisions(bad, out)
+    message = str(err.value)
+    assert "local_authority_ons_district" in message
+    assert "matched none" in message
+    assert "e08000035" in message  # a value actually found
+    assert not out.exists()
+
+
+def test_collisions_raise_when_district_is_numeric_ids(tmp_path):
+    bad = _with_column(
+        FIXTURE, tmp_path, "local_authority_ons_district", lambda s: "108"
+    )
+    with pytest.raises(ValueError, match="'108'"):
+        build_collisions(bad, tmp_path / "c.parquet")
+
+
+def test_counts_raise_when_area_codes_match_nothing(tmp_path):
+    bad = _with_column(
+        COUNTS, tmp_path, "local_authority_code", lambda s: s.str.lower()
+    )
+    with pytest.raises(ValueError, match="local_authority_code.*matched none"):
+        build_counts(bad, tmp_path / "a.parquet")
+
+
+def test_counts_raise_when_a_year_is_missing(tmp_path):
+    df = pd.read_csv(COUNTS)
+    partial = tmp_path / "partial.csv"
+    df[df.year != YEARS[-1]].to_csv(partial, index=False)
+    with pytest.raises(ValueError, match=str(YEARS[-1])):
+        build_counts(partial, tmp_path / "a.parquet")
+
+
+def test_children_raise_when_nothing_matches_collision_subset(tmp_path):
+    with pytest.raises(ValueError, match="collision subset"):
+        build_casualties(
+            CASUALTIES, tmp_path / "k.parquet", accident_index=pd.Series(["nope"])
+        )
+
+
+# --- main(): the whole pipeline on fixtures ---------------------------------
+
+
+def _raw_dir(tmp_path):
+    import shutil
+
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    names = {
+        CASUALTIES: "dft-road-casualty-statistics-casualty-2021.csv",
+        VEHICLES: "dft-road-casualty-statistics-vehicle-2021.csv",
+        FIXTURE: "dft-road-casualty-statistics-collision-2021.csv",
+        COUNTS: "dft_traffic_counts_aadf.csv",
+    }
+    for src, name in names.items():
+        shutil.copy(src, raw / name)
+    return raw
+
+
+@pytest.fixture
+def pipeline(tmp_path, monkeypatch):
+    import build_subsets
+
+    monkeypatch.setattr(build_subsets.registry, "data_root", lambda: tmp_path / "out")
+    return build_subsets, _raw_dir(tmp_path), tmp_path / "out"
+
+
+def test_main_builds_four_non_empty_subsets_following_the_collision_index(pipeline):
+    build_subsets, raw, out = pipeline
+    assert build_subsets.main([str(raw)]) == 0
+    frames = {
+        name: pd.read_parquet(out / rel)
+        for name, rel in {
+            "collisions": "stats19/collisions.parquet",
+            "casualties": "stats19/casualties.parquet",
+            "vehicles": "stats19/vehicles.parquet",
+            "counts": "dft-counts/aadf.parquet",
+        }.items()
+    }
+    assert all(len(df) > 0 for df in frames.values())
+    index = set(frames["collisions"].accident_index)
+    assert set(frames["casualties"].accident_index) <= index
+    assert set(frames["vehicles"].accident_index) <= index
+
+
+def test_main_raises_helpfully_when_aadf_file_is_missing(pipeline):
+    build_subsets, raw, _ = pipeline
+    (raw / "dft_traffic_counts_aadf.csv").unlink()
+    with pytest.raises(FileNotFoundError, match="AADF"):
+        build_subsets.main([str(raw)])
+
+
+def test_main_raises_when_collision_files_are_missing(pipeline):
+    build_subsets, raw, _ = pipeline
+    (raw / "dft-road-casualty-statistics-collision-2021.csv").unlink()
+    with pytest.raises(FileNotFoundError, match="collision"):
+        build_subsets.main([str(raw)])
+
+
+def test_main_raises_when_downloaded_years_do_not_cover_years(pipeline):
+    build_subsets, raw, _ = pipeline
+    path = raw / "dft-road-casualty-statistics-collision-2021.csv"
+    df = pd.read_csv(path)
+    df[df.collision_year != YEARS[-1]].to_csv(path, index=False)
+    with pytest.raises(ValueError, match=str(YEARS[-1])):
+        build_subsets.main([str(raw)])
