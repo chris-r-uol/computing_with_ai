@@ -405,18 +405,28 @@ main.content .cell-output pre {
   @apply cw-rounded-card cw-border cw-border-dashed cw-border-edge;
 }
 
-/* Tables scroll inside their own box. Without this the glossary's three columns
-   push the page sideways at 320px, which is the reflow failure this site has
-   had before. */
+/* Prose tables stay real tables. `display: block` was here, with
+   `overflow-x: auto`, to keep the glossary's three columns from pushing the
+   page sideways at 320px -- but changing a table's `display` away from `table`
+   is the documented way to lose the row and cell association in the
+   accessibility tree, and the only prose table on this site is the bilingual
+   glossary, where a screen-reader user who cannot tell which Chinese term
+   pairs with which English one has lost the page. Measured at 320px with
+   `display: table; max-width: 100%`: the cells wrap and the page still has
+   zero horizontal overflow, so the scroll box bought nothing.
+
+   Do not put a CSS-created scroll container back in its place either: one gets
+   no tabindex, so it is unreachable by keyboard. A future prose table that
+   genuinely cannot wrap gets wrapped explicitly, as one table. */
 main.content table {
-  @apply cw-block cw-max-w-full cw-overflow-x-auto cw-border-collapse cw-text-[0.95rem];
+  @apply cw-table cw-max-w-full cw-border-collapse cw-text-[0.95rem];
 }
 
-/* Except inside a code cell's output, where Quarto already supplies the scroll
-   box. A DataFrame stays a real table there: squeezing its columns until a date
-   wraps over three lines destroys the alignment that is the point of printing
-   one. Prose tables -- the glossary, the data page -- keep wrapping, which is
-   the right answer for them. */
+/* Inside a code cell's output Quarto supplies the scroll box, so a DataFrame
+   may take the width it needs: squeezing its columns until a date wraps over
+   three lines destroys the alignment that is the point of printing one. That
+   is the one place a table is allowed past the column, and the scrolling is
+   Quarto's wrapper, not a display change on the table itself. */
 main.content .cell-output table {
   @apply cw-table;
   width: max-content;

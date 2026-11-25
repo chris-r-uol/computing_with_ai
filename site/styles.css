@@ -60,3 +60,19 @@ main a,
 main code {
   overflow-wrap: anywhere;
 }
+
+/* `overflow-wrap` alone does nothing against `white-space: pre`, which Quarto's
+   stylesheet sets on every `code`: pre-formatted text takes no wrap at any
+   opportunity, so the rule above never applied to inline code at all. A path
+   written in the prose -- `scripts/audit_site_a11y.py` -- was 266 pixels wide
+   in a 320 pixel column and pushed the document to 345 pixels, which is a
+   reflow failure (WCAG 1.4.10) on the accessibility statement itself. Found by
+   scripts/audit_site_a11y.py, not by reading the CSS.
+
+   `pre-wrap`, not `normal`: runs of spaces inside inline code are part of what
+   it says. Code *blocks* are untouched -- `pre > code` keeps `white-space: pre`
+   and scrolls inside its own box, which is the exception the accessibility
+   statement documents. */
+main :not(pre) > code {
+  white-space: pre-wrap;
+}
