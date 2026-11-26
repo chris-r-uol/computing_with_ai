@@ -53,7 +53,6 @@ Failure modes the design implies but that no task's main happy-path test exercis
 |---|---|
 | `src/cwai/hints.py` | `hint()` and `reveal()` renderers; `HINT_TIERS` as the single source of truth for tier names and their display labels |
 | `src/cwai/slices.py` | the eight canonical `Slice` definitions, `load()`, and the `METRICS` a handoff check recomputes |
-| `hints/01-foundations.yml` | hint tiers for stage 1's exercise ids |
 | `notebooks/01-foundations/01-first-look.ipynb` | the reference lesson |
 | `notebooks/04-project/my-analysis-template.ipynb` | the workbook template |
 | `tests/test_slices.py` | slice definitions, metrics, error messages |
@@ -68,6 +67,8 @@ Failure modes the design implies but that no task's main happy-path test exercis
 | `src/cwai/checks.py` | the unattempted state; `check_slice()`; sentinel-safe `expect_*`; docstring correction |
 | `scripts/build_student_notebooks.py` | executable stub; import `HINT_TIERS` from `cwai.hints`; docstring correction |
 | `checks/README.md` | one implementation, not two |
+| `hints/01-foundations.yml` | real entries in place of the commented example |
+| `hints/README.md` | the fourth tier, in the prose, the table and the CI list |
 | `data/stats19/collisions.parquet` | rebuilt with the two new columns |
 | `tests/fixtures/stats19_collisions_sample.csv` | add a `first_road_number` column |
 | `site/index.qmd`, `scripts/render_site.py` | rewrite the prose the gate flags |
@@ -90,8 +91,8 @@ The design makes this first because the spike that proved the mechanism was writ
 **Interfaces:**
 - Consumes: `cwai.registry.repo_root()`
 - Produces:
-  - `HINT_TIERS: tuple[tuple[str, str], ...]` — `(("nudge", "Nudge"), ("method", "Method"), ("code", "Show the answer"), ("answer", "A model answer"))`. Tier **names** in order, each with its **display label**. Task 5 imports this.
-  - `TIER_NAMES: tuple[str, ...]` — just the names, derived from `HINT_TIERS`.
+  - `HINT_TIERS: tuple[str, ...]` — `("nudge", "method", "code", "answer")`. Tier names, in the order they are shown. Stays a flat tuple of names: `scripts/build_student_notebooks.py` already does `set(HINT_TIERS)` and an existing test asserts this shape.
+  - `TIER_LABELS: dict[str, str]` — `{"nudge": "Nudge", "method": "Method", "code": "Show the answer", "answer": "A model answer"}`
   - `REQUIRED_TIERS: tuple[str, ...]` — `("nudge", "method")`
   - `EXCLUSIVE_TIERS: frozenset[str]` — `frozenset({"code", "answer"})`
   - `hint(exercise_id: str, path: Path | None = None) -> IPython.display.HTML`
@@ -109,7 +110,7 @@ def test_hint_renders_one_disclosure_per_tier_plus_a_wrapper(tmp_path):
     assert "look here" in html and "do this" in html
 
 
-def test_hint_orders_tiers_and_labels_them_from_hint_tiers(tmp_path):
+def test_hint_orders_tiers_and_labels_them_from_tier_labels(tmp_path):
     path = write_hints(
         tmp_path,
         {"demo": {"code": "df.head()", "nudge": "n", "method": "m"}},
@@ -180,9 +181,9 @@ Expected: FAIL with `ModuleNotFoundError: No module named 'cwai.hints'` or `Attr
 
 - [ ] **Step 4: Implement `src/cwai/hints.py`**
 
-Define `HINT_TIERS`, `TIER_NAMES`, `REQUIRED_TIERS`, `EXCLUSIVE_TIERS` and `UnknownExerciseError` with the values in the Interfaces block above.
+Define `HINT_TIERS`, `TIER_LABELS`, `REQUIRED_TIERS`, `EXCLUSIVE_TIERS` and `UnknownExerciseError` with the values in the Interfaces block above.
 
-`hint(exercise_id, path=None)` reads the YAML (default `registry.repo_root() / "hints"`, resolved to the stage file for the exercise id's prefix — see note below), raises `UnknownExerciseError` with `difflib.get_close_matches` near matches in the style of `checks.UnknownCheckError`, and returns an `HTML` whose outer `<details>` summarises as `Hints for <code>{exercise_id}</code>` and whose inner `<details>` are the present tiers, in `HINT_TIERS` order, labelled from it. Escape every hint string with `html.escape`; render the `code` tier inside `<pre><code>`, the others inside `<p>`.
+`hint(exercise_id, path=None)` reads the YAML (default `registry.repo_root() / "hints"`, resolved to the stage file for the exercise id's prefix — see note below), raises `UnknownExerciseError` with `difflib.get_close_matches` near matches in the style of `checks.UnknownCheckError`, and returns an `HTML` whose outer `<details>` summarises as `Hints for <code>{exercise_id}</code>` and whose inner `<details>` are the present tiers, in `HINT_TIERS` order, labelled from `TIER_LABELS`. Escape every hint string with `html.escape`; render the `code` tier inside `<pre><code>`, the others inside `<p>`.
 
 `reveal(value, label="Show the output")` returns a collapsed `<details>` whose body is `value._repr_html_()` when that attribute exists and returns without raising, and otherwise `<pre>` + `html.escape(repr(value))`.
 
@@ -205,9 +206,11 @@ def test_rendered_hint_survives_a_quarto_render(tmp_path):
 
 Build a one-cell notebook that calls `hint()` on a fixture id with all four tiers populated, render it with `uv run quarto render` into `tmp_path`, and assert the output HTML contains four `<details` occurrences, each tier's display label, and each tier's text. Mark it `slow` and follow whatever marker registration `tests/test_site.py` already uses for its render tests.
 
-- [ ] **Step 7: Create `hints/01-foundations.yml`**
+- [ ] **Step 7: Extend `hints/01-foundations.yml`**
 
-One entry per exercise id the reference lesson will use (Task 8 fixes the ids). Start with the three the lesson needs: `first-look-row-count`, `first-look-severity-split`, `first-look-why-blank-coordinates` — the last with an `answer` tier and no `code` tier.
+The file already exists, holding a commented example and a note that no notebook in the stage has exercises yet. Replace that commented block with real entries — one per exercise id the reference lesson will use (Task 9 fixes the ids). Start with the three the lesson needs: `first-look-row-count`, `first-look-severity-split`, `first-look-why-blank-coordinates` — the last with an `answer` tier and no `code` tier.
+
+The `answer` tier is only accepted by the validator from Task 5 onward. Nothing validates these ids yet (no notebook references them, and `validate_hints` only checks ids an exercise cell actually uses), so writing it now is safe.
 
 - [ ] **Step 8: Run the full suite and the linters**
 
@@ -302,10 +305,10 @@ def test_major_road_collisions_are_the_joinable_subset():
 
 
 def test_a_naive_road_name_join_matches_almost_everything():
-    """97.3% matched — which is why the lesson asks whether the number is true."""
+    """98.1% matched — which is why the lesson asks whether the number is true."""
     keys = road_key_series(data.load_collisions())
     names = set(data.load_traffic_counts().road_name.dropna())
-    assert keys.isin(names).mean() == pytest.approx(0.973, abs=0.001)
+    assert keys.isin(names).mean() == pytest.approx(0.981, abs=0.001)
 
 
 def test_the_unclassified_match_is_an_aggregate_bucket_not_a_road():
@@ -397,7 +400,7 @@ def test_each_slice_selects_the_expected_number_of_rows(slice_id, rows):
     assert len(slices.load(slice_id)) == rows
 
 
-def test_three_slices_have_no_denominator():
+def test_two_slices_have_no_denominator_column():
     without = {s.id for s in slices.SLICES if s.denominator is None}
     assert without == {"pedestrians", "after-dark"}
 
@@ -409,7 +412,7 @@ def test_every_denominator_is_a_real_traffic_count_column():
             assert s.denominator in columns
 ```
 
-Note: the design's prose says "three of the eight slices have no usable denominator". Two have none *in the data* (`pedestrians`, `after-dark`); the third case is `pedestrians`' motor-traffic proxy, which exists but is not a cyclist/pedestrian exposure measure. The test pins the structural fact — two `None` denominators — and `test_three_slices_have_no_denominator` is therefore misnamed; call it `test_two_slices_have_no_denominator_column`.
+Note on the count: the design's prose says "three of the eight slices have no usable denominator". Two have none *in the data* (`pedestrians`, `after-dark`); the third case is the pedestrians' motor-traffic proxy, which exists but is not a pedestrian exposure measure. The test above pins the structural fact — two `None` denominators — and is named for it.
 
 - [ ] **Step 2: Write the failing tests for the error paths** — Review Focus items 2 and 3
 
@@ -636,7 +639,7 @@ A stub of `# your code here` is a comment, so a stripped notebook raises `NameEr
 - Test: `tests/test_student_notebooks.py`, `tests/test_hints.py`
 
 **Interfaces:**
-- Consumes: `cwai.hints.HINT_TIERS`, `TIER_NAMES`, `REQUIRED_TIERS`, `EXCLUSIVE_TIERS`
+- Consumes: `cwai.hints.HINT_TIERS`, `TIER_LABELS`, `REQUIRED_TIERS`, `EXCLUSIVE_TIERS`
 - Produces: `STUB_MARKER = "answer = ...  # your code here"`; `HINT_TIERS`/`REQUIRED_TIERS` re-exported from `cwai.hints` so existing importers keep working.
 
 - [ ] **Step 1: Write the failing tests for the executable stub**
@@ -663,7 +666,7 @@ def test_a_markdown_solution_cell_still_becomes_a_prose_stub():
 
 ```python
 def test_an_answer_tier_is_accepted():
-    validate_hints({"demo": {"nudge": "n", "method": "m", "answer": "because..."}}, ["demo"], Path("x.yml"))
+    validate_hints({"demo": {"nudge": "n", "method": "m", "answer": "because..."}}, ["demo"])
 
 
 def test_code_and_answer_together_are_rejected():
@@ -671,22 +674,25 @@ def test_code_and_answer_together_are_rejected():
         validate_hints(
             {"demo": {"nudge": "n", "method": "m", "code": "c", "answer": "a"}},
             ["demo"],
-            Path("x.yml"),
         )
     assert "code" in str(exc.value) and "answer" in str(exc.value)
 
 
 def test_an_unrecognised_tier_is_still_rejected():
     with pytest.raises(MissingHintError):
-        validate_hints({"demo": {"nudge": "n", "method": "m", "hint": "x"}}, ["demo"], Path("x.yml"))
+        validate_hints({"demo": {"nudge": "n", "method": "m", "hint": "x"}}, ["demo"])
 
 
 def test_tier_names_come_from_cwai_hints():
     import cwai.hints
     assert build_student_notebooks.HINT_TIERS is cwai.hints.HINT_TIERS
+
+
+def test_the_existing_tier_assertion_now_covers_four_tiers():
+    assert HINT_TIERS == ("nudge", "method", "code", "answer")
 ```
 
-Match `validate_hints`' real signature, which the existing tests in `tests/test_hints.py` already use.
+`validate_hints` takes two arguments, `(hints, exercise_ids)`. The last test above replaces the existing three-tier assertion at `tests/test_hints.py:74`, which this change breaks by design.
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
@@ -704,20 +710,24 @@ Authoring note for the lesson tasks, to go in that docstring: a solution cell mu
 Run: `uv run pytest tests/test_student_notebooks.py tests/test_hints.py -v`
 Expected: PASS.
 
-- [ ] **Step 6: Regenerate the student notebooks and confirm they are not stale**
+- [ ] **Step 6: Update `hints/README.md` for the fourth tier**
+
+That file is the guide a hint author reads, and it currently describes three tiers throughout. Update its "Why there are three tiers" heading and opening, its tier table, and its "What CI checks" list. Add a row for `answer`: a model answer in prose, for an "explain why" exercise, and mutually exclusive with `code` — an exercise has one or the other, never both.
+
+- [ ] **Step 7: Regenerate the student notebooks and confirm they are not stale**
 
 Run: `uv run python scripts/build_student_notebooks.py && uv run python scripts/build_student_notebooks.py --check`
 Expected: the second run reports nothing stale.
 
-- [ ] **Step 7: Run the full suite and the linters**
+- [ ] **Step 8: Run the full suite and the linters**
 
 Run: `uv run pytest -q && uv run ruff check && uv run ruff format --check`
 Expected: all pass.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add scripts/build_student_notebooks.py student/ tests/
+git add scripts/build_student_notebooks.py hints/README.md student/ tests/
 git commit -m "feat: executable exercise stubs and an answer hint tier"
 ```
 
@@ -971,6 +981,12 @@ The thing a student grows all week, and the artefact stage 4 continues.
 
 **Sections, from the design:** the slice and why; first look; cleaning; description; the join; rates; what this does not show. Each is a markdown heading with a prompt, and an empty code cell beneath.
 
+**Two authoring rules that will otherwise cost a CI failure** (both from `hints/README.md`):
+
+- **Give every cell an explicit, stable `id`** (nbformat 4.5 `"id"`). `nbformat` invents a fresh one when a cell has none, and a different one each save, so the generated `student/` copy changes without the content changing and `build_student_notebooks.py --check` fails in CI with a diff that looks like nothing. Set the ids deliberately and leave them alone.
+- **Run `uv run ruff format .` before regenerating the student copies.** `ruff format` rewrites `.ipynb` files and is a CI gate, so the other order leaves `student/` built from unformatted notebooks and `--check` fails.
+
+
 - [ ] **Step 1: Write the failing tests**
 
 ```python
@@ -1057,6 +1073,12 @@ One complete lesson that exercises every mechanism this plan built. It is the pa
 | Predict before you run | `reveal()` around the output being predicted |
 | A real traceback | a cell with both the tag and `#| error: true` |
 | A planted fault | working-looking code with a real error |
+
+
+**Two authoring rules that will otherwise cost a CI failure** (both from `hints/README.md`):
+
+- **Give every cell an explicit, stable `id`** (nbformat 4.5 `"id"`). `nbformat` invents a fresh one when a cell has none, and a different one each save, so the generated `student/` copy changes without the content changing and `build_student_notebooks.py --check` fails in CI with a diff that looks like nothing. Set the ids deliberately and leave them alone.
+- **Run `uv run ruff format .` before regenerating the student copies.** `ruff format` rewrites `.ipynb` files and is a CI gate, so the other order leaves `student/` built from unformatted notebooks and `--check` fails.
 
 **Subject:** read the collisions table, describe it, and meet one way it lies to you — the design names the casualty-type code read one position out, which turned cyclists into pedestrians. That is the planted fault, and it is a real mistake from the module lead's own session.
 

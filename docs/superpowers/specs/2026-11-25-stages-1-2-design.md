@@ -205,7 +205,7 @@ The vehicle is the linking task — join collisions to traffic counts to get **r
 **The join, as verified against the data.** The collision subset as currently built has no road identifier at all, so the intended failure mode did not exist. Adding `first_road_class` and `first_road_number` to the subset — a change to `scripts/build_subsets.py` and a rebuild from the raw downloads, which are still on disk — creates a join that fails in exactly the right way:
 
 - The student must build the key from two columns and a code lookup (`3` + `58` → `A58`, `1` + `62` → `M62`, `2` + `1` → `A1(M)`), which is fiddly, and which an agent does well.
-- Joined naively on road name, **97.3% of the 20,485 collisions match**. The join looks like a complete success.
+- Joined naively on road name, **98.1% of the 20,485 collisions match**. The join looks like a complete success.
 - But 10,422 of those matches are unclassified roads, where the collision's key is `U` and the traffic counts also carry `U` — as a *bucket label for all minor roads*, not a road. Half the matched rows are joined to an aggregate, and the resulting rate is meaningless.
 - The honest join is to major roads only: 10,060 collisions on motorways, A, A(M) and B roads, where the key names a real road.
 
