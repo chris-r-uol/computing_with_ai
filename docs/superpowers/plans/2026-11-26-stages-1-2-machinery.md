@@ -825,7 +825,9 @@ The gate is a floor, not the goal. It cannot tell whether prose is *good* for th
   - `check_hints(path: Path) -> list[Finding]`
   - `main(argv) -> int` — non-zero when any finding is returned, printing each as `source:line: rule — detail`
 
-**Scope, and the two exemptions.** The gate covers notebook markdown cells, the values in `hints/*.yml`, `site/index.qmd`, and the stage-page prose built in `scripts/render_site.py`. It skips:
+**Scope, and the two exemptions.** The gate covers notebook markdown cells, the values in `hints/*.yml`, `site/index.qmd`, the stage-page prose built in `scripts/render_site.py`, and — added by controller ruling during execution — **the student-facing message strings in `src/cwai/`** (`checks.py`, `slices.py`, `data.py`). Design §7.8 binds the language constraint to "check messages", and those modules are where check messages live; without this the one surface a stuck student reads at 22:00 would be the only ungated one. A reader that extracts string literals from a module is enough; no new rule set is needed.
+
+It skips:
 
 - `site/accessibility.qmd` — a legal statement whose precision is the point, and which cites regulations in their own words.
 - `site/glossary.qmd` — a term list, not prose.
@@ -926,7 +928,17 @@ def test_main_returns_non_zero_when_a_finding_is_found(tmp_path, capsys):
 Run: `uv run pytest tests/test_check_prose.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'check_prose'`.
 
-- [ ] **Step 5: Implement `scripts/check_prose.py`**
+- [ ] **Step 5: Add the jargon check and the glossary entries it demands**
+
+A second controller ruling, from a finding during execution. `site/glossary.qmd` holds 28 terms and **every one is a programming term** — variable, integer, DataFrame, traceback, commit. It contains no transport or statistics vocabulary at all: not denominator, rate, exposure, severity, KSI, casualty, collision, aggregate or slice. Half this module is transport-data analysis, and design §7.8 requires every technical term to be defined on first use *and* added to the glossary.
+
+A sentence-length and phrase-blocklist gate cannot catch this. "The slice has no denominator" is nine plain words in the active voice and passes every length rule. Undefined vocabulary is a different failure from dense prose.
+
+So the gate carries a `JARGON: frozenset[str]` of terms that must not appear in student-facing text unless they are present in `site/glossary.qmd`, reported as rule `jargon-not-in-glossary`. Seed it with the terms stages 1–2 actually use: `denominator`, `rate`, `exposure`, `severity`, `casualty`, `collision`, `aggregate`, `slice`, `KSI`, `categorical`, `kernel`, `parquet`. Then **add those terms to the glossary**, which is what makes the gate pass — bilingual, matching the existing table's three-column shape and its `lang="zh-Hans"` marking on the Chinese column.
+
+Tests: a term in student-facing text but absent from the glossary is flagged; the same term present in the glossary is not; the check is case-insensitive so `KSI` and `ksi` both match; and a term inside a code span or fence is not flagged, since those are stripped before the scan.
+
+- [ ] **Step 6: Implement `scripts/check_prose.py`**
 
 Strip fenced code, inline code, markdown tables and URLs before splitting. Split on `.`, `!`, `?` followed by whitespace and a capital, guarding decimals and a short abbreviation list.
 
@@ -934,12 +946,12 @@ Strip fenced code, inline code, markdown tables and URLs before splitting. Split
 
 The list will grow. It is a seed, not a specification, and adding to it is ordinary maintenance rather than a change of policy.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [ ] **Step 7: Run the tests to verify they pass**
 
 Run: `uv run pytest tests/test_check_prose.py -v`
 Expected: PASS.
 
-- [ ] **Step 7: Run the gate over the existing student-facing pages and fix what it flags**
+- [ ] **Step 8: Run the gate over the existing student-facing pages and fix what it flags**
 
 Run: `uv run python scripts/check_prose.py site/index.qmd scripts/render_site.py hints/`
 Expected: findings. These pages were written before the constraint existed, in the register the gate is meant to prevent, so fixing them is part of this task. Rewrite the flagged prose rather than widening the thresholds or the exemptions. The home page's subtitle and its "Two ways through the material" section are the likely offenders.
@@ -949,16 +961,16 @@ Then confirm nothing regressed:
 Run: `uv run pytest tests/test_site.py -q`
 Expected: PASS.
 
-- [ ] **Step 8: Add the gate to CI**
+- [ ] **Step 9: Add the gate to CI**
 
 Add `uv run python scripts/check_prose.py` to the workflow job that already runs `scripts/check_licences.py`, with the student-facing paths as arguments. Run `actionlint` on the changed workflow.
 
-- [ ] **Step 9: Run the full suite and the linters**
+- [ ] **Step 10: Run the full suite and the linters**
 
 Run: `uv run pytest -q && uv run ruff check && uv run ruff format --check && uv run python scripts/check_prose.py site/index.qmd scripts/render_site.py hints/ notebooks/`
 Expected: all pass.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add scripts/check_prose.py tests/test_check_prose.py site/index.qmd scripts/render_site.py hints/ .github/
