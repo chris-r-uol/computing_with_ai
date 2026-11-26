@@ -235,6 +235,15 @@ def test_hint_renders_the_answer_tier_as_wrapping_paragraphs(tmp_path):
     assert "<pre>a" not in html  # <pre> does not wrap, so it would break reflow
 
 
+def test_hint_splits_any_prose_tier_on_blank_lines_into_paragraphs(tmp_path):
+    # Intentional: every non-code tier keeps its paragraphs, not just `answer`.
+    path = write_hints(
+        tmp_path, {"demo": {"nudge": "first idea\n\nsecond idea", "method": "m"}}
+    )
+    html = hints.hint("demo", path=path).data
+    assert "<p>first idea</p><p>second idea</p>" in html
+
+
 def test_hint_renders_the_code_tier_in_pre_code(tmp_path):
     path = write_hints(tmp_path, {"demo": {"nudge": "n", "method": "m", "code": "x"}})
     assert "<pre><code>x</code></pre>" in hints.hint("demo", path=path).data
