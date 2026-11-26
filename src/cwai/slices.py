@@ -125,19 +125,59 @@ def get(slice_id: str) -> Slice:
     ) from None
 
 
+def shortlist() -> pd.DataFrame:
+    """The eight slices as a table, one row each.
+
+    The lesson and the workbook template both show this. ``table`` is the
+    column that says whether a slice's rows are collisions or people, which a
+    student needs before they can say what they counted.
+    """
+    return pd.DataFrame(
+        [
+            {
+                "id": s.id,
+                "label": s.label,
+                "table": s.table,
+                "denominator": s.denominator or "none",
+                "rate": "yes" if s.denominator is not None else "no",
+            }
+            for s in SLICES
+        ]
+    )
+
+
+# The two tables a slice can be cut from, and the loader for each. One mapping,
+# so that load() and ksi() cannot come to disagree about which names are real.
+_LOADERS: dict[str, Callable[[], pd.DataFrame]] = {
+    "collisions": data.load_collisions,
+    "casualties": data.load_casualties,
+}
+
+
+def _known_table(table: str) -> str:
+    """``table`` itself, or a ``ValueError`` naming the two tables there are."""
+    if table not in _LOADERS:
+        names = " or ".join(repr(name) for name in _LOADERS)
+        raise ValueError(f"Unknown table {table!r}. Use {names}.")
+    return table
+
+
+def _frame(table: str) -> pd.DataFrame:
+    """The whole table a slice is cut from, loaded by name."""
+    return _LOADERS[_known_table(table)]()
+
+
 def load(slice_id: str) -> pd.DataFrame:
     s = get(slice_id)
-    df = data.load_collisions() if s.table == "collisions" else data.load_casualties()
+    df = _frame(s.table)
     return df[s.select(df)]
 
 
 def ksi(df: pd.DataFrame, table: str) -> pd.Series:
     """Mask of killed or seriously injured rows (Fatal or Serious)."""
-    if table == "collisions":
+    if _known_table(table) == "collisions":
         return df["severity_label"].isin(["Fatal", "Serious"])
-    if table == "casualties":
-        return df["casualty_severity"].isin([1, 2])
-    raise ValueError(f"Unknown table {table!r}. Use 'collisions' or 'casualties'.")
+    return df["casualty_severity"].isin([1, 2])
 
 
 def denominator_column(slice_id: str) -> str:

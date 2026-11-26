@@ -1,5 +1,6 @@
 """The eight canonical slices and the metrics recomputed from them."""
 
+import pandas as pd
 import pytest
 
 from cwai import data, slices
@@ -25,6 +26,43 @@ def test_there_are_eight_slices_with_unique_ids():
 )
 def test_each_slice_selects_the_expected_number_of_rows(slice_id, rows):
     assert len(slices.load(slice_id)) == rows
+
+
+def test_the_shortlist_is_one_row_per_slice_in_definition_order():
+    """The lesson and the template both show this, so it lives here, once.
+
+    Two notebooks building the same table by hand is how the two drift apart.
+    """
+    table = slices.shortlist()
+    assert list(table.columns) == ["id", "label", "table", "denominator", "rate"]
+    assert list(table["id"]) == slices.list_slices()
+    assert list(table["label"]) == [s.label for s in slices.SLICES]
+
+
+def test_the_shortlist_says_which_table_each_slice_cuts():
+    """Without this column a student cannot say whether they counted people."""
+    table = slices.shortlist().set_index("id")
+    assert table.loc["cyclists", "table"] == "casualties"
+    assert table.loc["pedestrians", "table"] == "casualties"
+    assert set(table.loc[table["table"] == "casualties"].index) == {
+        "cyclists",
+        "pedestrians",
+    }
+
+
+def test_the_shortlist_spells_out_a_missing_denominator_rather_than_leaving_it_blank():
+    table = slices.shortlist().set_index("id")
+    assert (
+        table.loc["after-dark", "denominator"],
+        table.loc["after-dark", "rate"],
+    ) == (
+        "none",
+        "no",
+    )
+    assert (table.loc["cyclists", "denominator"], table.loc["cyclists", "rate"]) == (
+        "pedal_cycles",
+        "yes",
+    )
 
 
 def test_two_slices_have_no_denominator_column():
@@ -60,6 +98,43 @@ def test_asking_for_a_rate_on_a_slice_with_no_denominator_says_which():
 
 def test_denominator_column_returns_the_name_when_there_is_one():
     assert slices.denominator_column("cyclists") == "pedal_cycles"
+
+
+def test_a_slice_whose_table_name_is_misspelt_is_rejected_not_quietly_loaded(
+    monkeypatch,
+):
+    """``load`` took anything that was not ``"collisions"`` to be the casualties.
+
+    So a slice defined with ``table="colisions"`` loaded the wrong frame and
+    said nothing. ``slice-row-count`` would then compute its expected value
+    from that frame and mark a student's correct answer wrong.
+    """
+    typo = slices.Slice(
+        "typo", "Typo", "colisions", None, lambda df: df["casualty_type"] == 1
+    )
+    monkeypatch.setitem(slices._BY_ID, "typo", typo)
+    with pytest.raises(ValueError) as exc:
+        slices.load("typo")
+    message = str(exc.value)
+    assert "colisions" in message
+    assert "'collisions'" in message and "'casualties'" in message
+
+
+def test_load_and_ksi_agree_about_which_table_names_are_real(monkeypatch):
+    """One of the two rejected an unknown name and the other did not.
+
+    That disagreement is what let the misspelling above through, so the two
+    must reject the same names with the same words.
+    """
+    typo = slices.Slice(
+        "typo", "Typo", "colisions", None, lambda df: df["casualty_type"] == 1
+    )
+    monkeypatch.setitem(slices._BY_ID, "typo", typo)
+    with pytest.raises(ValueError) as from_load:
+        slices.load("typo")
+    with pytest.raises(ValueError) as from_ksi:
+        slices.ksi(pd.DataFrame(), "colisions")
+    assert str(from_load.value) == str(from_ksi.value)
 
 
 def test_row_count_metric_recomputes_per_slice():
