@@ -8,7 +8,7 @@ import pytest
 from make_synthetic import make_sensor_series, write_all
 
 from cwai import checks as checks_module
-from cwai import registry
+from cwai import registry, slices
 from cwai.checks import (
     TOLERANCE,
     CheckFailed,
@@ -278,3 +278,109 @@ def test_long_wrong_shape_is_truncated_in_the_message(typed_checks):
 def test_number_check_shows_a_string_the_student_typed():
     message = check("demo-number", "42").message
     assert "'42'" in message and "not a number" in message
+
+
+# --- the unattempted state ---------------------------------------------------
+
+
+def test_an_untouched_stub_reads_as_unattempted_not_failed():
+    result = checks_module.check("demo-number", checks_module.UNATTEMPTED)
+    assert result.attempted is False
+    assert result.passed is False
+    assert "✗" not in repr(result)
+    assert "failed" not in repr(result).lower()
+    assert "not attempted yet" in repr(result)
+
+
+def test_a_wrong_answer_still_reads_as_wrong():
+    result = check("demo-number", 999)
+    assert result.attempted is True and result.passed is False
+    assert "✗" in repr(result)
+
+
+def test_a_right_answer_still_reads_as_right():
+    result = check("demo-number", 42)
+    assert result.attempted is True and result.passed is True
+    assert "✓" in repr(result)
+
+
+def test_an_unattempted_result_is_still_falsey():
+    assert not check("demo-number", checks_module.UNATTEMPTED)
+
+
+def test_the_three_states_differ_without_colour():
+    marks = {
+        repr(check("demo-number", 42))[0],
+        repr(check("demo-number", 999))[0],
+        repr(check("demo-number", checks_module.UNATTEMPTED))[0],
+    }
+    assert len(marks) == 3
+
+
+def test_an_unknown_check_name_still_raises_even_when_unattempted():
+    """A typo in the check name is an authoring bug, not an unanswered exercise."""
+    with pytest.raises(UnknownCheckError):
+        check("no-such-check", checks_module.UNATTEMPTED)
+
+
+def test_expect_columns_treats_the_sentinel_as_unattempted():
+    expect_columns(checks_module.UNATTEMPTED, ["a", "b"])  # must not raise
+
+
+def test_expect_shape_treats_the_sentinel_as_unattempted():
+    expect_shape(checks_module.UNATTEMPTED, rows=3)  # must not raise
+
+
+def test_expect_shape_still_rejects_nothing_to_check_when_unattempted():
+    """The authoring bug is still a bug; only the student's blank is excused."""
+    with pytest.raises(ValueError):
+        expect_shape(checks_module.UNATTEMPTED)
+
+
+# --- check_slice -------------------------------------------------------------
+
+
+def test_check_slice_passes_the_right_answer_for_that_slice():
+    assert checks_module.check_slice("slice-row-count", 2304, "cyclists").passed
+
+
+def test_check_slice_rejects_another_slices_right_answer():
+    result = checks_module.check_slice("slice-row-count", 6328, "cyclists")
+    assert not result.passed
+    assert "2304" in result.message
+
+
+def test_check_slice_applies_the_metrics_tolerance():
+    assert checks_module.check_slice("slice-ksi-percent", 30.946, "cyclists").passed
+    assert not checks_module.check_slice("slice-ksi-percent", 31.5, "cyclists").passed
+
+
+def test_check_slice_reads_an_untouched_stub_as_unattempted():
+    result = checks_module.check_slice(
+        "slice-row-count", checks_module.UNATTEMPTED, "cyclists"
+    )
+    assert result.attempted is False and "not attempted yet" in repr(result)
+
+
+def test_check_slice_on_an_unknown_slice_raises_the_slice_error():
+    with pytest.raises(slices.UnknownSliceError):
+        checks_module.check_slice("slice-row-count", 1, "cyclist")
+
+
+def test_check_slice_on_an_unknown_metric_names_near_matches():
+    with pytest.raises(UnknownCheckError) as exc:
+        checks_module.check_slice("slice-row-counts", 1, "cyclists")
+    assert "slice-row-count" in str(exc.value)
+
+
+def test_check_slice_unknown_metric_raises_even_when_unattempted():
+    with pytest.raises(UnknownCheckError):
+        checks_module.check_slice(
+            "slice-row-counts", checks_module.UNATTEMPTED, "cyclists"
+        )
+
+
+def test_check_slice_gives_the_same_verdict_as_check_on_the_same_value():
+    """Both go through _compare, so the wording is identical."""
+    result = checks_module.check_slice("slice-row-count", "2304", "cyclists")
+    assert "not a number" in result.message

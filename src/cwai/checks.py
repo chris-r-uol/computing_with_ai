@@ -1,8 +1,8 @@
 """Self-checks: let a student test an answer against a known truth.
 
-Answers live in ``checks/expected.json``, which the website's JavaScript reads
-too; its shape is pinned by ``checks/expected.schema.json`` and the comparison
-rules both implementations must follow are written down in ``checks/README.md``.
+Answers live in ``checks/expected.json``. Its shape is pinned by
+``checks/expected.schema.json`` and the comparison rules are written down in
+``checks/README.md``. This module is the only implementation of those rules.
 Every message a student can see says what was expected, what was found, and
 what to do next.
 """
@@ -16,9 +16,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from cwai import registry
+from cwai import registry, slices
 
 TOLERANCE = 1e-6
+
+UNATTEMPTED = Ellipsis
 
 _EXPECTED_PATH = registry.repo_root() / "checks" / "expected.json"
 
@@ -39,13 +41,27 @@ class CheckResult:
     name: str
     passed: bool
     message: str
+    attempted: bool = True
 
     def __bool__(self) -> bool:
         return self.passed
 
     def __repr__(self) -> str:
+        # Three marks with three different shapes, so no state depends on colour.
+        # The third state is never a cross: an untouched exercise is not a wrong one.
+        if not self.attempted:
+            return f"○ {self.name}: {self.message}"
         mark = "✓" if self.passed else "✗"
         return f"{mark} {self.name}: {self.message}"
+
+
+_UNATTEMPTED_MESSAGE = (
+    "not attempted yet. Replace the ... with your answer, then run the cell again."
+)
+
+
+def _unattempted(name: str) -> CheckResult:
+    return CheckResult(name, False, _UNATTEMPTED_MESSAGE, attempted=False)
 
 
 def load_expected(path: Path | None = None) -> dict:
@@ -121,20 +137,26 @@ def _compare(
     )
 
 
+def _unknown_name_message(name: str, known: Iterable[str]) -> str:
+    near = difflib.get_close_matches(name, list(known), n=3)
+    hint = (
+        f"Did you mean {' or '.join(repr(n) for n in near)}?"
+        if near
+        else "Check the spelling against the name given in the notebook."
+    )
+    return (
+        f"There is no check called {name!r}. {hint} "
+        "The name must match the one in the notebook exactly."
+    )
+
+
 def check(name: str, value: object) -> CheckResult:
     """Compare ``value`` with the stored answer called ``name``."""
     expected = load_expected()
     if name not in expected:
-        near = difflib.get_close_matches(name, expected, n=3)
-        hint = (
-            f"Did you mean {' or '.join(repr(n) for n in near)}?"
-            if near
-            else "Check the spelling against the name given in the notebook."
-        )
-        raise UnknownCheckError(
-            f"There is no check called {name!r}. {hint} "
-            "The name must match the one in the notebook exactly."
-        )
+        raise UnknownCheckError(_unknown_name_message(name, expected))
+    if value is UNATTEMPTED:
+        return _unattempted(name)
     entry = expected[name]
     problem = _compare(
         entry["type"], entry["value"], entry.get("tolerance", TOLERANCE), value
@@ -146,6 +168,8 @@ def check(name: str, value: object) -> CheckResult:
 
 def expect_columns(df, columns: Iterable[str]) -> None:
     """Raise CheckFailed unless every named column is present."""
+    if df is UNATTEMPTED:
+        return
     wanted = list(columns)
     missing = [c for c in wanted if c not in df.columns]
     if missing:
@@ -164,6 +188,8 @@ def expect_shape(df, rows: int | None = None, cols: int | None = None) -> None:
             "expect_shape needs something to check: pass rows=, cols=, or both, "
             "as in expect_shape(df, rows=12) or expect_shape(df, rows=12, cols=3)."
         )
+    if df is UNATTEMPTED:
+        return
     found_rows, found_cols = df.shape
     wanted, found = [], []
     if rows is not None and found_rows != rows:
@@ -177,3 +203,22 @@ def expect_shape(df, rows: int | None = None, cols: int | None = None) -> None:
             f"Expected {' and '.join(wanted)} but found {' and '.join(found)}. "
             "Check any filtering, merging or dropping steps before this point."
         )
+
+
+def check_slice(name: str, value: object, slice_id: str) -> CheckResult:
+    """Compare ``value`` with the answer for one student's slice of the data.
+
+    An unknown ``slice_id`` raises ``slices.UnknownSliceError``, which explains
+    itself. An unknown ``name`` raises ``UnknownCheckError``: that is a mistake
+    in the course material, so it raises even when the exercise is untouched.
+    """
+    the_slice = slices.get(slice_id)
+    if name not in slices.METRICS:
+        raise UnknownCheckError(_unknown_name_message(name, slices.METRICS))
+    if value is UNATTEMPTED:
+        return _unattempted(name)
+    metric = slices.METRICS[name]
+    problem = _compare(metric.kind, metric.compute(the_slice), metric.tolerance, value)
+    if problem is None:
+        return CheckResult(name, True, "passed")
+    return CheckResult(name, False, problem)
