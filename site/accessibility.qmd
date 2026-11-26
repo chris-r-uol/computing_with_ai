@@ -6,11 +6,15 @@ include-before-body:
 ---
 
 This statement applies to the Computing with AI course site, the reading copy of
-the course material. It was prepared and last reviewed on 25 November 2026.
+the material for the joint module between Southwest Jiaotong University and the
+University of Leeds. **The site is published by the University of Leeds.** It was
+prepared and last reviewed on 26 November 2026.
 
 We want everyone on the module to be able to use this site. We aim to meet the
-Web Content Accessibility Guidelines, WCAG 2.2, level AA, which is the later
-version of the guidelines that EN 301 549 references at level 2.1 AA.
+Web Content Accessibility Guidelines, WCAG 2.2, level AA. The UK Public Sector
+Bodies (Websites and Mobile Applications) Accessibility Regulations 2018 require
+the standard set out in EN 301 549, which references WCAG at level 2.1 AA; WCAG
+2.2 is the later version of those guidelines.
 
 ## What you can expect
 
@@ -100,32 +104,12 @@ This is our current position, and we will update it as the site changes.
 ## Tell us about a problem
 
 If you cannot use part of this site, or you need the material in another format,
-tell the module teaching team. Say which page it is and what you were trying to
-do.
+email the module lead at <c.e.rushton@leeds.ac.uk>. Say which page it is and what
+you were trying to do. We aim to reply within one week.
 
-::: {.callout-warning}
-## TODO before publication: name the responsible body, and give a contact
-
-Two things are missing from this statement, and it is incomplete until both are
-supplied. The module lead must:
-
-1. **Name the institution that publishes this site.** The affiliation was taken
-   out of the public pages while the site is being tested. The duty under the
-   UK Public Sector Bodies (Websites and Mobile Applications) Accessibility
-   Regulations 2018 attaches to the body that publishes a site, not to whether
-   the page prints its name, so taking the name out did not remove the
-   obligation: it removed the reader's means of finding out who is answerable
-   for it. Naming the institution again restores the citation of those
-   Regulations, and with it the enforcement route that was removed alongside
-   the name -- the Equality Advisory and Support Service (EASS) in Great
-   Britain, and the Equality Commission for Northern Ireland in Northern
-   Ireland. A page that names nobody cannot honestly send a reader to a
-   regulator, which is why that paragraph is not here now.
-2. **Give a real contact** -- an email address, or the course repository's issue
-   tracker -- and state any response time they are willing to commit to.
-
-Do not publish this statement until both are done.
-:::
+If you are not happy with our response and you are in Great Britain, you can
+contact the Equality Advisory and Support Service (EASS). In Northern Ireland,
+the Equality Commission for Northern Ireland is responsible for enforcement.
 
 ## Technical information
 
