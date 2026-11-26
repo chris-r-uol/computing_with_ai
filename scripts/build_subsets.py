@@ -42,6 +42,8 @@ COLLISION_COLUMNS: tuple[str, ...] = (
     "day_of_week",
     "time",
     "local_authority_ons_district",
+    "first_road_class",
+    "first_road_number",
     "road_type",
     "speed_limit",
     "light_conditions",

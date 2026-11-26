@@ -259,3 +259,11 @@ def test_main_raises_when_downloaded_years_do_not_cover_years(pipeline):
     df[df.collision_year != YEARS[-1]].to_csv(path, index=False)
     with pytest.raises(ValueError, match=str(YEARS[-1])):
         build_subsets.main([str(raw)])
+
+
+def test_collisions_carry_the_road_identifier_columns(tmp_path):
+    df = build_collisions(FIXTURE, tmp_path / "c.parquet")
+    assert "first_road_class" in df.columns
+    assert "first_road_number" in df.columns
+    assert df.first_road_class.dtype == "Int64"
+    assert df.first_road_number.dtype == "Int64"
