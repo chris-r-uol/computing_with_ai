@@ -58,10 +58,19 @@ class CheckResult:
 _UNATTEMPTED_MESSAGE = (
     "not attempted yet. Replace the ... with your answer, then run the cell again."
 )
+# A handoff has a second stub: the slice the answer is for. A student who has
+# written their answer and not chosen a slice has followed the instruction
+# above already, so telling them to follow it again is the wrong thing to read
+# at the moment they are stuck. Both messages keep the words "not attempted
+# yet", so the three states still read the same way.
+_NO_SLICE_MESSAGE = (
+    "not attempted yet. You have not chosen a slice. Go back to the cell that "
+    "sets your slice id and put yours in. Then run this cell again."
+)
 
 
-def _unattempted(name: str) -> CheckResult:
-    return CheckResult(name, False, _UNATTEMPTED_MESSAGE, attempted=False)
+def _unattempted(name: str, message: str = _UNATTEMPTED_MESSAGE) -> CheckResult:
+    return CheckResult(name, False, message, attempted=False)
 
 
 def load_expected(path: Path | None = None) -> dict:
@@ -213,6 +222,11 @@ def check_slice(name: str, value: object, slice_id: str) -> CheckResult:
     the same neutral result as an unanswered question. A student who has not
     chosen a slice yet has not got an exercise wrong.
 
+    The two say different things, though. An unpicked slice is named as such
+    and points at the cell that sets the slice id, because a student may have
+    written their answer already. The slice is reported first when both stubs
+    are untouched, since that is the one to fill in first.
+
     An unknown ``slice_id`` still raises ``slices.UnknownSliceError``, which
     explains itself: only the stub sentinel is read as unattempted, so a typo
     is never excused. An unknown ``name`` raises ``UnknownCheckError``, and it
@@ -221,7 +235,9 @@ def check_slice(name: str, value: object, slice_id: str) -> CheckResult:
     """
     if name not in slices.METRICS:
         raise UnknownCheckError(_unknown_name_message(name, slices.METRICS))
-    if slice_id is UNATTEMPTED or value is UNATTEMPTED:
+    if slice_id is UNATTEMPTED:
+        return _unattempted(name, _NO_SLICE_MESSAGE)
+    if value is UNATTEMPTED:
         return _unattempted(name)
     the_slice = slices.get(slice_id)
     metric = slices.METRICS[name]

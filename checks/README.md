@@ -91,6 +91,12 @@ never as wrong.
   unattempted result, exactly as an untouched `value` does. Only the sentinel
   counts: a mistyped slice id still raises `UnknownSliceError`, so a typo is
   never excused as a blank.
+- **The two unattempted paths have their own messages.** An unpicked slice is
+  named as such, and is pointed at the cell that sets the slice id. It is never
+  told to replace the `...` with its answer, because a student may have written
+  the answer already. The slice is reported first when both stubs are
+  untouched, since that is the one to fill in first. Both keep the `○` mark and
+  the words "not attempted yet", so the three states still read the same way.
 
 ## Writing an entry
 

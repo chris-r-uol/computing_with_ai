@@ -374,6 +374,42 @@ def test_check_slice_reads_an_unpicked_slice_as_unattempted():
     assert result.attempted is False and "not attempted yet" in repr(result)
 
 
+def test_the_two_unattempted_paths_say_different_things():
+    """An unpicked slice and an unanswered question are not the same problem.
+
+    Both are ``○``, and both must stay ``○``. But a student who has written
+    their answer and not yet chosen a slice must not be told to replace the
+    ``...`` with their answer, because they already did, and they are reading
+    that message at the moment they are stuck. So the two messages must not
+    collapse back into one.
+    """
+    no_slice = checks_module.check_slice(
+        "slice-row-count", 1, checks_module.UNATTEMPTED
+    )
+    no_answer = checks_module.check_slice(
+        "slice-row-count", checks_module.UNATTEMPTED, "cyclists"
+    )
+    assert no_slice.attempted is False and no_answer.attempted is False
+    assert "not attempted yet" in no_slice.message
+    assert "not attempted yet" in no_answer.message
+    assert no_slice.message != no_answer.message
+    # The defect this guards: the wrong instruction, to someone who followed it.
+    assert "with your answer" not in no_slice.message
+    assert "slice" in no_slice.message
+
+
+def test_an_unpicked_slice_is_reported_before_an_unanswered_question():
+    """Both stubs untouched is the published state, and the slice comes first.
+
+    A student fills the slice cell before the answer cell, so that is the one
+    to name when neither has been touched.
+    """
+    neither = checks_module.check_slice(
+        "slice-row-count", checks_module.UNATTEMPTED, checks_module.UNATTEMPTED
+    )
+    assert "slice" in neither.message
+
+
 def test_check_slice_still_raises_on_a_mistyped_slice_id():
     """Only the stub sentinel is unattempted. A typo stays an error.
 
