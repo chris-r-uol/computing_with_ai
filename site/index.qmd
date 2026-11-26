@@ -11,9 +11,10 @@ include-before-body:
 ---
 
 This is the reading copy of the Computing with AI course material. The worked
-answers are in `notebooks/` in the repository, and they will reach this site
-through the hint tiers. If something stops working on your computer or your
-connection, you can still read the lesson.
+answers are here too, on each lesson page. Every exercise carries its hints.
+The last hint holds the answer. Each hint stays closed until you click it, so
+you can try the exercise first. If something stops working on your computer or
+your connection, you can still read the lesson.
 
 ## The course, stage by stage
 
