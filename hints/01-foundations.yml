@@ -4,28 +4,49 @@
 # exercise needs a `nudge` and a `method`; `code` is optional. See README.md.
 
 first-look-row-count:
-  nudge: Look at the first line of the output. Many tables report their size there.
-  method: Ask the table for its shape. The shape has two numbers. The first is the
-    number of rows. Read that one.
+  nudge: The table knows how big it is. You do not have to count the rows yourself.
+  method: Ask the table for its shape. The shape is a pair of numbers. The first
+    one is the number of rows, and the second is the number of columns. Read the
+    first one.
   code: |
-    # shape is a pair: (rows, columns).
-    # Item 0 of the pair is the number of rows.
-    row_count = collisions.shape[0]
+    # shape is a pair: the number of rows, then the number of columns.
+    # Position 0 of a pair holds its first item.
+    answer = collisions.shape[0]
 
 first-look-severity-split:
-  nudge: Find the column that says how serious each collision was. Look at the values in it.
-  method: Count how many times each value appears in the severity column. Then
-    divide each count by the total number of rows. This gives a share for each value.
+  nudge: Find the column that holds the word for each severity. Look at the values
+    in it.
+  method: Count how many times each value appears in that column. Then divide each
+    count by the total number of rows. That gives you a share of the whole table.
+    Multiply the share you want by 100, then round it.
   code: |
-    # Count each severity value, as a share of all rows.
-    shares = collisions["severity"].value_counts(normalize=True)
+    # normalize=True turns each count into a share of the total.
+    shares = collisions["severity_label"].value_counts(normalize=True)
+    answer = round(shares["Slight"] * 100, 1)
 
-first-look-why-blank-coordinates:
-  nudge: Look at the rows that have blank coordinates. Ask what they have in common.
-  method: Filter to the rows with blank coordinates. Then count their values in
-    other columns, such as the year. If one value stands out, that is a clue.
-    Think about how each record was first written down.
-  answer: Some records were written down without a map position. This happens, for
-    example, when the police could not reach the exact place. The data keeps
-    these collisions, but it leaves the coordinates blank. A blank value means
-    "not recorded". It does not mean zero.
+first-look-why-no-error:
+  nudge: Python ran every line without complaint. Ask what Python is able to check,
+    and what it cannot check.
+  method: Think about the difference between code that runs and code that is right.
+    Then say what Python knew about the list of names. Then say what it did not
+    know about the data.
+  answer: |
+    Python checks that your code can run. It does not know what your code is
+    meant to mean.
+
+    Every line in that cell was legal Python. The list held three names. The
+    code asked for a name by its number, and Python gave the name it was asked
+    for. Python could not know that the numbers were one step out.
+
+    Only a person who knows the data can see a mistake like this one. So check
+    every number against something you already know.
+
+first-look-your-slice-rows:
+  nudge: You do not have to write the filter for your slice. The course package
+    holds it already.
+  method: Pass your slice id to the load function in the slices module. That gives
+    you a table with only your own rows in it. Then ask that table how many rows
+    it has.
+  code: |
+    # len() gives the number of rows in a table.
+    answer = len(slices.load(my_slice))
