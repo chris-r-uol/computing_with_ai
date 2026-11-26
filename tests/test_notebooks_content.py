@@ -3,8 +3,8 @@
 ``tests/test_student_notebooks.py`` tests the stripping machinery on fixtures.
 This module tests the one real lesson built on that machinery: it runs, its
 stripped copy runs, every exercise has hints, every check name resolves, every
-mechanism is used, no student's slice is worked through, and the prose passes
-the gate.
+answer it checks is still true, every mechanism is used, no student's slice is
+worked through, and the prose passes the gate.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ import nbformat
 import run_notebooks
 import yaml
 from build_student_notebooks import check_notebook_hints, exercise_ids
+from nbclient import NotebookClient
 
 from cwai import checks, slices
 
@@ -41,6 +42,44 @@ def check_names_called(path: Path) -> list[str]:
     return _CHECK_CALL.findall(all_source(path))
 
 
+def _executed(path: Path) -> nbformat.NotebookNode:
+    """The notebook, run in a fresh kernel, with its outputs kept.
+
+    ``run_notebooks.run`` reports whether a notebook ran and throws the outputs
+    away, which is all it needs. The test below reads the outputs, so it runs
+    the notebook on the same settings and keeps them.
+    """
+    nb = nbformat.read(path, as_version=4)
+    NotebookClient(
+        nb,
+        timeout=run_notebooks.TIMEOUT_SECONDS,
+        kernel_name="python3",
+        allow_errors=False,
+        resources={"metadata": {"path": str(REPO)}},
+    ).execute()
+    return nb
+
+
+def check_result_lines(nb: nbformat.NotebookNode) -> list[str]:
+    """Every line of output that a ``CheckResult`` printed, in notebook order.
+
+    ``CheckResult.__repr__`` opens with one of three marks, so the mark alone
+    says which of the three states a check landed in.
+    """
+    lines = []
+    for cell in nb.cells:
+        for output in cell.get("outputs", []):
+            text = output.get("text") or (output.get("data") or {}).get(
+                "text/plain", ""
+            )
+            lines += [
+                line.strip()
+                for line in str(text).splitlines()
+                if line.strip()[:1] in {"✓", "✗", "○"}
+            ]
+    return lines
+
+
 def test_the_reference_lesson_runs_standalone_within_the_time_limit():
     result = run_notebooks.run(LESSON)
     assert result.passed, result.error
@@ -61,6 +100,24 @@ def test_every_check_name_the_lesson_uses_resolves():
     assert called, "the lesson calls no check at all"
     for name in called:
         assert name in checks.load_expected() or name in slices.METRICS
+
+
+def test_every_answer_the_full_lesson_checks_is_still_true():
+    """Not that the lesson runs: that the answers it checks against are right.
+
+    ``checks/expected.json`` holds answers measured from the data by hand, and a
+    rebuilt data subset moves them without breaking anything the other tests
+    watch. The lesson would still run, its page would still render, and every
+    student's exercise would quietly be marked wrong. Every solution is present
+    in the full notebook, so every check in it must read as passed, and none may
+    read as unattempted.
+    """
+    lines = check_result_lines(_executed(LESSON))
+    assert len(lines) == len(check_names_called(LESSON)), (
+        f"expected one result per check call, found {lines}"
+    )
+    wrong = [line for line in lines if not line.startswith("✓")]
+    assert not wrong, "a check in the full lesson did not pass:\n" + "\n".join(wrong)
 
 
 def test_the_lesson_exercises_each_mechanism_once():
