@@ -71,16 +71,25 @@ jobs:
       # rather than a silent pass. site/accessibility.qmd and site/glossary.qmd
       # are exempt, with the reason, in the script itself.
       #
-      # Two notes on the list. site/data.qmd is generated and not committed, so
-      # the step above writes it: the gate reads the assembled page, which is
-      # the only place its sentences are measured together, as well as the two
-      # modules that write them. And a Python module is named rather than swept
+      # Three notes on the list. site/data.qmd is generated and not committed,
+      # so the step above writes it: the gate reads the assembled page, which
+      # is the only place its sentences are measured together, as well as the
+      # two modules that write them. A Python module is named rather than swept
       # from a directory: `site/` would pull in the render-time site/notebooks/
       # copies, and `src/cwai/` would pull in modules holding no student prose.
+      # And scripts/build_student_notebooks.py is here because it owns the
+      # strings it writes into every stripped notebook a student opens, so its
+      # wording reaches students even though the file never does.
+      #
+      # test_every_authored_page_is_either_gated_or_exempt holds the site half
+      # of the guarantee in the comment above: a new page that is neither in
+      # this list nor exempt fails the suite. The modules are still chosen by
+      # hand, so a new one that speaks to a student must be added here.
       - run: >-
           uv run python scripts/check_prose.py
           site/index.qmd site/data.qmd site/_stages
-          scripts/render_site.py src/cwai/registry.py
+          scripts/render_site.py scripts/build_student_notebooks.py
+          src/cwai/registry.py
           src/cwai/checks.py src/cwai/slices.py src/cwai/data.py
           src/cwai/hints.py hints notebooks
       - if: inputs.run-notebooks

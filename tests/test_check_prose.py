@@ -183,6 +183,22 @@ def test_glossary_terms_reads_the_english_column_and_not_the_header():
     assert "english" not in glossary_terms()
 
 
+def test_glossary_terms_reads_both_forms_of_a_term_written_with_a_slash(tmp_path):
+    """One row can define two forms of one word, as "axis / axes" does.
+
+    The plural rule adds an "s", so it turns "axis" into "axises" and never
+    finds "axes". Writing the irregular form in the row is how the gate learns
+    it, and it keeps the glossary one row per idea rather than two.
+    """
+    path = tmp_path / "glossary.qmd"
+    path.write_text(
+        "| English | 中文 | Meaning |\n|---|---|---|\n"
+        "| axis / axes | a | One edge of a chart. |\n",
+        encoding="utf-8",
+    )
+    assert glossary_terms(path) == frozenset({"axis", "axes"})
+
+
 # --- the file readers and the exemptions ---
 
 
@@ -413,3 +429,50 @@ def test_the_exempt_pages_are_not_in_the_paths_ci_gates():
     """An exemption is a decision in the script, not a path quietly left out."""
     gated = {Path(path).name for path in _gated_paths()}
     assert not gated & set(EXEMPT)
+
+
+def _authored_pages() -> set[str]:
+    """Every page of the site a person wrote, as a repository-relative path."""
+    pages = [
+        *(REPO_ROOT / "site").glob("*.qmd"),
+        *(REPO_ROOT / "site" / "_stages").glob("*.qmd"),
+    ]
+    return {page.relative_to(REPO_ROOT).as_posix() for page in pages} - GENERATED
+
+
+def _pages_the_gate_accounts_for() -> set[str]:
+    """Every page CI either gates or exempts, with gated directories expanded."""
+    accounted = set()
+    for target in _gated_paths():
+        path = REPO_ROOT / target
+        if path.is_dir():
+            accounted |= {
+                page.relative_to(REPO_ROOT).as_posix() for page in path.rglob("*.qmd")
+            }
+        elif path.suffix == ".qmd":
+            accounted.add(target)
+    accounted |= {f"site/{name}" for name in EXEMPT}
+    return accounted - GENERATED
+
+
+def test_every_authored_page_is_either_gated_or_exempt():
+    """The other direction, and the one nothing enforced.
+
+    The tests above check that no exempt page is gated and that every gated
+    path is here. Neither notices a page nobody listed: a new ``site/setup.qmd``
+    would publish to students without the gate ever reading it, and the
+    workflow's comment -- "every student-facing surface is listed here" --
+    would quietly stop being true.
+    ``tests/test_site.py::test_tailwind_scans_the_committed_pages_and_not_the_generated_ones``
+    guards the Tailwind content list the same way, for the same reason.
+
+    This covers the site's pages. The Python modules in the gated list are
+    still chosen by hand, because ``src/cwai/`` holds modules with no student
+    prose in them; a new module that speaks to students has to be added there.
+    """
+    authored = _authored_pages()
+    accounted = _pages_the_gate_accounts_for()
+    assert authored == accounted, {
+        "authored but neither gated nor exempt": sorted(authored - accounted),
+        "accounted for but not an authored page": sorted(accounted - authored),
+    }
