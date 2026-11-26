@@ -62,9 +62,9 @@ def _body(tier: str, text: str) -> str:
     safe = escape(str(text).rstrip("\n"))
     if tier == "code":
         return f"<pre><code>{safe}</code></pre>"
-    if tier == "answer":
-        return f"<pre>{safe}</pre>"
-    return f"<p>{safe}</p>"
+    # Prose tiers (including a model answer) wrap; only code needs <pre>.
+    paragraphs = [chunk.strip() for chunk in safe.split("\n\n") if chunk.strip()]
+    return "".join(f"<p>{chunk}</p>" for chunk in paragraphs)
 
 
 def hint(exercise_id: str, path: Path | None = None) -> HTML:

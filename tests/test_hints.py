@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import nbformat
@@ -166,6 +167,11 @@ def test_nudge_is_required_even_when_method_is_present(nudge):
     assert "nudge" in str(exc.value) and "method" not in str(exc.value)
 
 
+def has_open_details(html):
+    """True when any <details> element starts expanded."""
+    return re.search(r"<details\b[^>]*\bopen\b", html) is not None
+
+
 def write_hints(tmp_path, data, name="hints.yml"):
     path = tmp_path / name
     path.write_text(yaml.safe_dump(data))
@@ -203,17 +209,30 @@ def test_hint_on_an_unknown_exercise_names_near_matches(tmp_path):
 
 
 def test_hint_renders_no_open_attribute_so_every_tier_starts_collapsed(tmp_path):
-    path = write_hints(tmp_path, {"demo": {"nudge": "n", "method": "m", "code": "c"}})
-    assert "open" not in hints.hint("demo", path=path).data
-
-
-def test_hint_renders_the_answer_tier_in_pre(tmp_path):
     path = write_hints(
-        tmp_path, {"demo": {"nudge": "n", "method": "m", "answer": "a < b"}}
+        tmp_path,
+        {"demo": {"nudge": "open the file", "method": "m", "code": "c"}},
+    )
+    html = hints.hint("demo", path=path).data
+    assert "open the file" in html
+    assert not has_open_details(html)
+
+
+def test_the_open_check_catches_an_expanded_details_element():
+    assert has_open_details('<details class="x" open="">')
+    assert has_open_details("<details open>")
+    assert not has_open_details("<details><summary>open it</summary></details>")
+
+
+def test_hint_renders_the_answer_tier_as_wrapping_paragraphs(tmp_path):
+    path = write_hints(
+        tmp_path,
+        {"demo": {"nudge": "n", "method": "m", "answer": "a < b\n\nsecond part"}},
     )
     html = hints.hint("demo", path=path).data
     assert "A model answer" in html
-    assert "<pre>a &lt; b</pre>" in html
+    assert "<p>a &lt; b</p><p>second part</p>" in html
+    assert "<pre>a" not in html  # <pre> does not wrap, so it would break reflow
 
 
 def test_hint_renders_the_code_tier_in_pre_code(tmp_path):
@@ -250,7 +269,7 @@ def test_hint_without_a_path_rejects_an_id_in_two_files(tmp_path, monkeypatch):
 
 def test_reveal_wraps_a_dataframes_html_in_a_collapsed_disclosure():
     html = hints.reveal(pd.DataFrame({"a": [1, 2]})).data
-    assert html.startswith("<details") and "open" not in html
+    assert html.startswith("<details") and not has_open_details(html)
     assert "<table" in html
     assert "Show the output" in html
 
@@ -317,4 +336,4 @@ def test_rendered_hint_survives_a_quarto_render(tmp_path):
     for tier, text in tiers.items():
         assert hints.TIER_LABELS[tier] in html
         assert text in html
-    assert "<details open" not in html
+    assert not has_open_details(html)
