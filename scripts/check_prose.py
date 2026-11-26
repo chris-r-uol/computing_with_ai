@@ -79,14 +79,19 @@ PLAIN_ALTERNATIVES: dict[str, str] = {
 # length cannot catch an undefined term: "the slice has no denominator" is nine
 # plain words in the active voice, and a student who has met neither word is
 # still stuck. Seeded with the transport and statistics vocabulary of stages 1
-# and 2, which the glossary's programming terms did not cover.
+# and 2, which the glossary's programming terms did not cover, and then with
+# the four words the gate's first run over the stage pages showed it was
+# missing: the name of the dataset, and the three words stage 2 is about.
 JARGON: frozenset[str] = frozenset(
     {
+        "agentic",
         "aggregate",
+        "autocomplete",
         "casualty",
         "categorical",
         "collision",
         "denominator",
+        "diff",
         "exposure",
         "kernel",
         "KSI",
@@ -94,6 +99,7 @@ JARGON: frozenset[str] = frozenset(
         "rate",
         "severity",
         "slice",
+        "STATS19",
     }
 )
 
