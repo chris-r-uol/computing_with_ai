@@ -8,6 +8,13 @@ the committed files themselves, through the same loaders a student uses.
 They are the only tests that fail when the data is rebuilt badly, so keep them
 about the data's shape and coverage rather than its exact row counts, which
 change at every upstream refresh.
+
+The road and casualty facts at the foot of this file are the deliberate
+exception, and they are pinned on purpose. Stage 2's whole thesis and two
+numbers written into the stage 1 lesson's prose rest on them, so a rebuild that
+moves one has to fail here rather than publish a page whose text asserts a
+number its own output contradicts. Do not loosen those assertions into shape
+checks; if a refresh moves one, change the material it belongs to as well.
 """
 
 from __future__ import annotations
@@ -156,3 +163,20 @@ def test_road_key_never_emits_a_sentinel_or_missing_number():
         assert road_key(3, number) == "A"
     assert road_key(6, 0) == "U"
     assert road_key(2, 1) == "A1(M)"
+
+
+def test_the_casualty_counts_the_lesson_prints_in_its_prose_are_pinned():
+    """Two numbers the stage 1 lesson states as text, not as cell output.
+
+    ``notebooks/01-foundations/01-first-look.ipynb`` says "The answer came out
+    as 120" of the off-by-one count, and "Nearly twenty times as many cyclists"
+    of the fixed one. Both are hard-coded in markdown beside a cell that
+    computes them. A rebuild that moved either would leave the page showing one
+    number while the prose next to it claimed another, and a beginner has no
+    way to tell which to believe.
+    """
+    casualty_type = data.load_casualties()["casualty_type"]
+    # The off-by-one pairing counted code 2 as the cyclists.
+    assert (casualty_type == 2).sum() == 120
+    # Code 1 is the real cyclists: 19.2 times as many, which is "nearly twenty".
+    assert (casualty_type == 1).sum() == 2304
