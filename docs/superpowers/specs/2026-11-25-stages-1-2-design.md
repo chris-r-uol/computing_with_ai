@@ -298,7 +298,19 @@ Changes to existing foundation code, all of them small and all best made before 
 
 - Confirmation that Copilot seats exist for both cohorts before stage 2 runs.
 - Whether tutorial 2's workbook swap is acceptable given students work on different slices.
-- Still outstanding from the foundation and now blocking the site deploy: the **accessibility contact**, and the **institution name** for the accessibility statement.
+### Blocking the site deploy
+
+Four items, each failing a publish-gate test by design. CI holds the site back until all four are supplied; none of them blocks an ordinary pull request.
+
+1. The **accessibility contact** — an email address or the repository's issue tracker, plus any response time you will commit to. Outstanding from the foundation.
+2. The **institution name** for the accessibility statement. Outstanding from the foundation. Naming it again restores the citation of the UK Public Sector Bodies Accessibility Regulations 2018 and the enforcement route that was removed with it.
+3. The **Chinese term for "agentic"** in `site/glossary.qmd`, added during stages 1–2. The cell carries a `TODO` and `test_no_placeholder_is_left_in_student_facing_content` fails while it remains. The candidates are **智能体式**, which keeps the 智能体 root used for "agent", and **自主式**, which reads better but loses that connection. It is an unsettled term and it is the word stage 2 is titled after, so it is read on every page of that stage — which is why it was left as an honest gap rather than guessed.
+
+4. The **Chinese term for "authority"** in `site/glossary.qmd`, added by the whole-branch review's fix wave. The glossary now defines it, because the workbook template's section 5 is built on the word: everybody joins the traffic counts at authority level. It means a UK local authority — the council for one area, such as Leeds. 地方政府 reads as "local government" and 地方当局 is more literal, and choosing between them in a statutory-data context is not a call to guess, so the row carries a `TODO`.
+
+### Wants a Chinese-reading colleague's eye, not blocking
+
+Two glossary terms are written with confidence but are genuine judgement calls in a transport-safety context: **exposure → 暴露量** (against 风险暴露) and **casualty → 伤亡人员** (against 伤亡者). Any further terms the stages 1–2 work left as `TODO` are listed beside their rows and are covered by the gate above.
 
 ---
 
