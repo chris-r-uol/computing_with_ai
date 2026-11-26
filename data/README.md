@@ -26,7 +26,7 @@ the day you download it, not the day you publish.
 
 ### STATS19 casualties
 
-One row per person injured in a West Yorkshire collision, giving their age, sex, road-user type and injury severity; link it to collisions by collision reference.
+One row per person injured in a West Yorkshire collision. It gives their age, sex, road-user type and injury severity. Link it to the collisions by collision reference.
 
 - File: `stats19/casualties.parquet`
 - Licence: OGL-v3.0
@@ -80,7 +80,7 @@ The same made-up sensor readings with faults such as stuck values and dropouts a
 
 ### DfT annual average daily flow (AADF) traffic counts
 
-Yearly estimates of how many vehicles of each type use each counted stretch of road on an average day, published by the Department for Transport. It reaches back much further than the collision tables, which start in 2021 because that is the earliest year DfT publishes STATS19 as a per-year file (earlier years come only inside multi-gigabyte bundles). So the gap is upstream publishing, not a choice made here: the earlier counts give the pre-COVID baseline and the 2020 collapse in traffic, which the collision data cannot show, and any comparison between the two datasets has to stay inside the years they share.
+Yearly estimates of how many vehicles of each type use each counted stretch of road on an average day. The Department for Transport publishes them. These counts reach back much further than the collision tables. The collision tables start in 2021, because that is the earliest year the Department publishes STATS19 as a file per year. Earlier years come only inside multi-gigabyte bundles. So the gap is upstream publishing, and not a choice made here. The earlier counts show the traffic before COVID, and the collapse in traffic in 2020. The collision data cannot show either of those. So compare the two datasets only inside the years they share.
 
 - File: `dft-counts/aadf.parquet`
 - Licence: OGL-v3.0
@@ -89,7 +89,7 @@ Yearly estimates of how many vehicles of each type use each counted stretch of r
 
 ### STATS19 vehicles
 
-One row per vehicle involved in a West Yorkshire collision, with its type, manoeuvre and driver details; link it to collisions by collision reference.
+One row per vehicle involved in a West Yorkshire collision. It gives its type, its manoeuvre and the driver's details. Link it to the collisions by collision reference.
 
 - File: `stats19/vehicles.parquet`
 - Licence: OGL-v3.0

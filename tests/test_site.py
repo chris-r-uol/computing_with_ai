@@ -6,6 +6,7 @@ from pathlib import Path
 
 import nbformat
 import pytest
+import render_site
 import yaml
 from build_student_notebooks import (
     EXERCISE_TAG,
@@ -169,6 +170,20 @@ def test_stripped_solution_cell_never_reaches_the_rendered_page(tmp_path):
     assert "your code here" in html  # the stub is what the student sees
     assert SOLUTION_MARKER not in html
     assert SECRET_OUTPUT not in html
+
+
+def test_the_data_page_can_be_written_without_a_render(tmp_path, monkeypatch):
+    """CI writes the generated page this way before the prose gate reads it.
+
+    The page is not committed, and the gate fails on a path it cannot read
+    rather than passing over it, so this is the step that makes it readable. A
+    full render would also write it, at the cost of executing every notebook.
+    """
+    monkeypatch.setattr(render_site, "SITE_DIR", tmp_path)
+    assert render_site.main(["--write-data-page"]) == 0
+    page = (tmp_path / "data.qmd").read_text(encoding="utf-8")
+    for info in registry.list_datasets():
+        assert info.title in page
 
 
 def test_data_page_lists_every_registered_dataset(site):

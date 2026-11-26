@@ -70,6 +70,31 @@ def test_sentences_ignores_markdown_tables_and_urls():
     ) == ["See https://example.com/a.b.c now."]
 
 
+def test_sentences_splits_after_a_plain_no():
+    """Merging two sentences inflates the count, which can manufacture a finding."""
+    assert len(sentences("The answer is no. Then we move on.")) == 2
+
+
+def test_sentences_does_not_split_a_number_reference():
+    """'no.' and 'fig.' guard only when a number follows.
+
+    That is when they are abbreviating something.
+    """
+    assert len(sentences("See no. 5 for the answer.")) == 1
+    assert len(sentences("Read fig. 3 before you start.")) == 1
+
+
+def test_sentences_splits_before_the_house_em_dash():
+    """This repository writes an em dash as `--`, so prose really does start with it."""
+    assert len(sentences("Use it. -- then stop.")) == 2
+
+
+def test_sentences_splits_before_a_curly_quote_or_a_real_dash():
+    assert len(sentences("He said it. “Then stop.”")) == 2
+    assert len(sentences("Use it. — then stop.")) == 2
+    assert len(sentences("Use it. ‘then stop’.")) == 2
+
+
 # --- the rules ---
 
 
@@ -289,6 +314,37 @@ def test_main_returns_zero_on_clean_prose(tmp_path, capsys):
     )
     assert main([str(path)]) == 0
     assert "sentence-too-long" not in capsys.readouterr().out
+
+
+def test_main_fails_on_a_path_that_does_not_exist(tmp_path, capsys):
+    """A renamed or mistyped path must not report success over nothing.
+
+    This is the defect that matters most in a gate whose whole value is that a
+    future author cannot drift past it.
+    """
+    assert main([str(tmp_path / "hints-renamed")]) == 1
+    assert "unusable-target" in capsys.readouterr().out
+
+
+def test_main_fails_on_a_directory_holding_nothing_it_can_read(tmp_path, capsys):
+    (tmp_path / "notes.txt").write_text("We utilise it.\n", encoding="utf-8")
+    assert main([str(tmp_path)]) == 1
+    assert "unusable-target" in capsys.readouterr().out
+
+
+def test_main_fails_on_a_file_it_has_no_rule_set_for(tmp_path, capsys):
+    path = tmp_path / "lesson.rst"
+    path.write_text("We utilise it.\n", encoding="utf-8")
+    assert main([str(path)]) == 1
+    assert "unusable-target" in capsys.readouterr().out
+
+
+def test_an_exempt_target_is_a_decision_and_not_an_unusable_one(tmp_path, capsys):
+    """An exemption passes; a path the gate cannot read does not."""
+    path = tmp_path / "glossary.qmd"
+    path.write_text("| a | b | We utilise it. |\n", encoding="utf-8")
+    assert main([str(path)]) == 0
+    assert "unusable-target" not in capsys.readouterr().out
 
 
 def test_main_walks_a_directory_for_the_files_it_knows(tmp_path):

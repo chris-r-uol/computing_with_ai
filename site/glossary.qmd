@@ -59,5 +59,6 @@ Stages 1 and 2 use. Each later stage adds its own.
 | denominator | [分母]{lang="zh-Hans"} | The number you divide by. A count of 20 means little until you know the denominator. |
 | rate | [比率]{lang="zh-Hans"} | A count divided by exposure, such as collisions for every million vehicles counted. |
 | autocomplete | [自动补全]{lang="zh-Hans"} | A tool that suggests the rest of a line or a block of code as you type. |
-| agentic | TODO: Chinese term needed for "agentic" | Describes a tool that plans and acts by itself, rather than only answering. An agent writes code, runs it and reads the result. |
+| agent | [智能体]{lang="zh-Hans"} | An AI tool that takes steps by itself to reach a goal you set. It writes code, runs it, reads the result and tries again. |
+| agentic | TODO: Chinese term needed for "agentic" | Describes a way of working in which you set the goal and an agent takes the steps. |
 | diff | [差异]{lang="zh-Hans"} | A list of the lines a change added, removed or altered. You read it to see what an agent changed in your code. |

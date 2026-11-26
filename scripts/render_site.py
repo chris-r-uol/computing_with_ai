@@ -301,7 +301,18 @@ def render(
     )
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else list(argv)
+    # The data page is generated, not committed, so a fresh checkout does not
+    # have one. The prose gate checks it like any other page, and a page it
+    # cannot find is a failure there rather than a silent pass, so CI writes
+    # the page first. A full render would do it too, but it costs a Quarto run
+    # of every notebook to produce one file.
+    if "--write-data-page" in args:
+        page = SITE_DIR / "data.qmd"
+        page.write_text(data_page(), encoding="utf-8")
+        print(f"Wrote {page}")
+        return 0
     done = render(SITE_DIR, REPO_ROOT / SITE_OUT)
     sys.stdout.write(done.stdout)
     sys.stderr.write(done.stderr)

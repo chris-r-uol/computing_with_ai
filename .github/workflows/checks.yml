@@ -43,8 +43,9 @@ jobs:
       - run: uv run ruff format --check .
       # actionlint is a dev dependency; it checks these workflow files.
       - run: uv run actionlint .github/workflows/*.yml
-      # CWAI_PUBLISH_GATE turns on the "no TODO left in the accessibility
-      # statement" test, so the site cannot deploy while it is unfinished.
+      # CWAI_PUBLISH_GATE turns on the two "no TODO is left" tests, one for the
+      # accessibility statement and one for the rest of the student-facing
+      # content, so the site cannot deploy while a placeholder remains in it.
       - run: uv run pytest
         env:
           CWAI_PUBLISH_GATE: ${{ inputs.publish-gate && '1' || '' }}
@@ -61,16 +62,26 @@ jobs:
       # lost its licence banner or its entry in site/vendor/NOTICE.txt.
       - run: uv run python scripts/selfhost_assets.py --check
       - run: uv run python scripts/check_licences.py
+      # site/data.qmd is generated from the registry at render time and is not
+      # committed, so it must exist before the prose gate can read it.
+      - run: uv run python scripts/render_site.py --write-data-page
       # The prose gate (design §7.8): plain English in everything a student
       # reads. Every student-facing surface is listed here, because the gate
-      # checks what it is given. site/accessibility.qmd and site/glossary.qmd
-      # are exempt, with the reason, in the script itself. A Python module is
-      # named rather than swept up from a directory: most modules here are
-      # build tools, and a build tool's strings are not prose for students.
+      # checks what it is given, and a path it cannot read is now a failure
+      # rather than a silent pass. site/accessibility.qmd and site/glossary.qmd
+      # are exempt, with the reason, in the script itself.
+      #
+      # Two notes on the list. site/data.qmd is generated and not committed, so
+      # the step above writes it: the gate reads the assembled page, which is
+      # the only place its sentences are measured together, as well as the two
+      # modules that write them. And a Python module is named rather than swept
+      # from a directory: `site/` would pull in the render-time site/notebooks/
+      # copies, and `src/cwai/` would pull in modules holding no student prose.
       - run: >-
           uv run python scripts/check_prose.py
-          site/index.qmd site/_stages scripts/render_site.py
+          site/index.qmd site/data.qmd site/_stages
+          scripts/render_site.py src/cwai/registry.py
           src/cwai/checks.py src/cwai/slices.py src/cwai/data.py
-          hints notebooks
+          src/cwai/hints.py hints notebooks
       - if: inputs.run-notebooks
         run: uv run python scripts/run_notebooks.py notebooks/

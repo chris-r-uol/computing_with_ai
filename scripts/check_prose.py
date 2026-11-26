@@ -84,6 +84,7 @@ PLAIN_ALTERNATIVES: dict[str, str] = {
 # missing: the name of the dataset, and the three words stage 2 is about.
 JARGON: frozenset[str] = frozenset(
     {
+        "agent",
         "agentic",
         "aggregate",
         "autocomplete",
@@ -156,10 +157,12 @@ _ABBREVIATIONS = frozenset(
         "mr.",
         "mrs.",
         "ms.",
-        "fig.",
-        "no.",
     }
 )
+# These guard only when a number follows, which is when they are abbreviating
+# something. An unguarded "no." swallowed the sentence after "the answer is
+# no.", and merging two sentences inflates the count of both.
+_NUMBERED = frozenset({"no.", "nos.", "fig.", "figs.", "p.", "pp.", "ch."})
 
 
 def _mask(line: str, masks: list[str]) -> str:
@@ -196,13 +199,20 @@ def _starts_sentence(char: str) -> bool:
     A capital is not required. A sentence may start with a lower-case name,
     such as ``pandas``. What keeps a decimal or an abbreviation from splitting
     is the whitespace test and ``_ABBREVIATIONS``, not a capital.
+
+    The dashes matter here. This repository writes an em dash as ``--``, so a
+    sentence really does begin with a hyphen, and a missing one merged two
+    sentences into a count that could fail the length rule on its own.
     """
-    return char.isalnum() or char in "\x00\"'`([*_#"
+    return char.isalnum() or char in "\x00\"'`([*_#-—–“‘"
 
 
 def _after_abbreviation(text: str, end: int) -> bool:
     tail = text[:end].split()
-    return bool(tail) and tail[-1].lower() in _ABBREVIATIONS
+    token = tail[-1].lower() if tail else ""
+    if token in _ABBREVIATIONS:
+        return True
+    return token in _NUMBERED and text[end:].lstrip()[:1].isdigit()
 
 
 def _spans(paragraph: str) -> list[tuple[int, int]]:
@@ -561,32 +571,58 @@ READERS = {
 WALKED = (".qmd", ".ipynb", ".yml", ".yaml")
 
 
+def _unusable(target: str, detail: str) -> Finding:
+    """A target the gate cannot read is a finding, never a silent pass.
+
+    The whole value of this gate is that a future author cannot drift past it.
+    A renamed path that reported success would be worse than no gate at all,
+    because the green tick would say the prose had been checked.
+    """
+    return Finding(target, 0, "unusable-target", detail)
+
+
 def check_path(path: Path) -> list[Finding]:
-    """Check one file, unless it is exempt or there is no reader for it."""
+    """Check one file, unless it is exempt. Report it if it cannot be read."""
     path = Path(path)
     if path.name in EXEMPT:
-        return []
+        return []  # a decision, recorded in EXEMPT with its reason
+    if not path.exists():
+        return [
+            _unusable(
+                str(path),
+                "no such file or directory, so nothing here was checked. "
+                "Correct the path given to the gate.",
+            )
+        ]
     reader = READERS.get(path.suffix)
     if reader is None:
-        print(f"check_prose: no rule set for {path}, skipped", file=sys.stderr)
-        return []
+        return [
+            _unusable(
+                str(path),
+                f"the gate has no rule set for a '{path.suffix}' file, so "
+                "nothing here was checked. Give it a file it can read, or add "
+                "a reader for this kind.",
+            )
+        ]
     return reader(path)
 
 
+def _walk(folder: Path) -> list[Path]:
+    return sorted(
+        found
+        for found in folder.rglob("*")
+        if found.is_file()
+        and found.suffix in WALKED
+        and ".ipynb_checkpoints" not in found.parts
+    )
+
+
 def _collect(targets: Iterable[str]) -> list[Path]:
+    """Every file the given targets name. A directory is walked for WALKED."""
     paths: list[Path] = []
     for target in targets:
         path = Path(target)
-        if path.is_dir():
-            paths += sorted(
-                found
-                for found in path.rglob("*")
-                if found.is_file()
-                and found.suffix in WALKED
-                and ".ipynb_checkpoints" not in found.parts
-            )
-        else:
-            paths.append(path)
+        paths += _walk(path) if path.is_dir() else [path]
     return paths
 
 
@@ -596,12 +632,24 @@ def main(argv: list[str] | None = None) -> int:
         print(__doc__)
         return 2
     findings: list[Finding] = []
+    for target in args:
+        folder = Path(target)
+        if folder.is_dir() and not _walk(folder):
+            findings.append(
+                _unusable(
+                    target,
+                    "this directory holds no file the gate can read "
+                    f"({', '.join(WALKED)}), so nothing here was checked.",
+                )
+            )
     for path in _collect(args):
         findings += check_path(path)
     for finding in findings:
         print(f"{finding.source}:{finding.line}: {finding.rule} — {finding.detail}")
     if findings:
-        print(f"\n{len(findings)} problems. See §7.8 of the design, or this script.")
+        count = len(findings)
+        problems = "problem" if count == 1 else "problems"
+        print(f"\n{count} {problems}. See §7.8 of the design, or this script.")
         return 1
     print("Prose gate passed.")
     return 0
