@@ -88,6 +88,59 @@ def test_render_fails_when_a_notebook_errors(tmp_path):
     assert done.returncode != 0
 
 
+@pytest.mark.slow
+def test_a_raising_cell_renders_its_traceback_instead_of_failing_the_render(tmp_path):
+    """Quarto ignores raises-exception; the cell option is what saves the render."""
+    site = _copy_site(tmp_path / "site")
+    out = tmp_path / "out"
+    done = render(site, out, notebooks=[FIXTURES / "raises_exception.ipynb"])
+    assert done.returncode == 0, done.stdout + done.stderr
+    html = (out / "notebooks/90-stretch/raises_exception.html").read_text()
+    assert "ValueError" in html
+    assert "invalid literal" in html
+    # This cell comes after the failing one, so it proves execution went on.
+    assert "execution-continued-sentinel" in html
+
+
+def _raising_cell_problems(nb) -> list[str]:
+    """Cells that carry only one half of the two-part contract."""
+    problems = []
+    for index, cell in enumerate(nb.cells):
+        if cell.cell_type != "code":
+            continue
+        tagged = "raises-exception" in cell.metadata.get("tags", [])
+        first = cell.source.splitlines()[0].strip() if cell.source else ""
+        optioned = first == "#| error: true"
+        if tagged != optioned:
+            have = "the tag" if tagged else "the cell option"
+            need = "#| error: true" if tagged else "the raises-exception tag"
+            problems.append(f"cell {index} has {have} but not {need}")
+    return problems
+
+
+def test_every_raising_cell_carries_both_mechanisms():
+    """One without the other breaks either CI or the published page."""
+    found = []
+    for path in sorted((REPO / "notebooks").rglob("*.ipynb")):
+        if ".ipynb_checkpoints" in path.parts:
+            continue
+        found += [
+            f"{path.relative_to(REPO)}: {p}"
+            for p in _raising_cell_problems(nbformat.read(path, as_version=4))
+        ]
+    assert not found, "\n".join(found)
+
+
+def test_the_contract_check_catches_a_half_marked_cell():
+    nb = nbformat.read(FIXTURES / "raises_exception.ipynb", as_version=4)
+    assert _raising_cell_problems(nb) == []
+    nb.cells[2].source = "int('not a number')"
+    assert len(_raising_cell_problems(nb)) == 1
+    nb.cells[2].source = "#| error: true\nint('x')"
+    nb.cells[2].metadata["tags"] = []
+    assert len(_raising_cell_problems(nb)) == 1
+
+
 def test_render_runs_a_good_notebook_and_shows_its_output(site):
     html = (site / "notebooks/01-foundations/00-smoke.html").read_text()
     assert "Smoke test" in html
