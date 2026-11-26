@@ -82,18 +82,27 @@ PLAIN_ALTERNATIVES: dict[str, str] = {
 # and 2, which the glossary's programming terms did not cover, and then with
 # the four words the gate's first run over the stage pages showed it was
 # missing: the name of the dataset, and the three words stage 2 is about.
+#
+# "join", "authority" and "axis" were added later, and they are the reason not
+# to trust a seed list: they are the words stage 2 is built on, they were in
+# the workbook template from its first draft, and the seed did not have them.
+# "axes" is listed beside "axis" because the plural rule only adds an "s".
 JARGON: frozenset[str] = frozenset(
     {
         "agent",
         "agentic",
         "aggregate",
+        "authority",
         "autocomplete",
+        "axes",
+        "axis",
         "casualty",
         "categorical",
         "collision",
         "denominator",
         "diff",
         "exposure",
+        "join",
         "kernel",
         "KSI",
         "parquet",
@@ -310,17 +319,24 @@ def sentences(text: str) -> list[str]:
 
 @cache
 def glossary_terms(path: Path | None = None) -> frozenset[str]:
-    """The English terms defined in the glossary table, in lower case."""
+    """The English terms defined in the glossary table, in lower case.
+
+    One row may give two forms of the same word, separated by a slash, as
+    "axis / axes" does. ``_plural`` only adds an "s", so an irregular plural
+    has to be written out, and a row is the honest place to write it.
+    """
     rows = (Path(path) if path else GLOSSARY).read_text(encoding="utf-8").split("\n")
     terms = set()
     for row in rows:
         row = row.strip()
         if not row.startswith("|"):
             continue
-        term = row.strip("|").split("|")[0].strip().strip("`*").strip().lower()
-        if not term or term == "english" or not _WORD.search(term):
-            continue
-        terms.add(term)
+        cell = row.strip("|").split("|")[0].strip().strip("`*").strip().lower()
+        for term in cell.split("/"):
+            term = term.strip()
+            if not term or term == "english" or not _WORD.search(term):
+                continue
+            terms.add(term)
     return frozenset(terms)
 
 
