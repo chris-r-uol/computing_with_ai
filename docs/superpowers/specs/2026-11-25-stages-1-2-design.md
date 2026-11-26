@@ -30,9 +30,9 @@ This also answers a failure the module design named: projects that are all the s
 3. **Divergence by construction.** The slice choice in hour one makes each student's work different.
 4. **Engineering practice from the start**, not as an advanced topic: reading a traceback, `assert`, the debugger, `pytest`.
 5. **AI as a verification skill.** Stage 2 assesses finding the fault, not producing the code.
-6. **Unstuck without leaving the page.** Hints and answers reach the student where they are working.
-7. **Lessons stay standalone**, so CI keeps running them and a student returning in six months finds them working.
-8. **Honest about the data.** Students meet real coding errors, missing values and absent denominators, and learn to say so.
+7. **Unstuck without leaving the page.** Hints and answers reach the student where they are working.
+8. **Lessons stay standalone**, so CI keeps running them and a student returning in six months finds them working.
+9. **Honest about the data.** Students meet real coding errors, missing values and absent denominators, and learn to say so.
 
 ## 3. Non-goals
 
@@ -70,6 +70,7 @@ Inherited from the module design and the built foundation:
 | Data | Vendored and real: 20,485 collisions 2021–2025, 26,436 casualties, 37,152 vehicles, traffic counts 2000–2025, two city networks. |
 | Network | No external fetches from the site. Students may be on a poor connection from Chengdu. |
 | Accessibility | WCAG 2.2 AA. Anything rendered into a page is keyboard-reachable and screen-reader sane. |
+| Language | **Plain English, written to be understood in English by a reader whose first language is not English** (§7.8). Chinese appears in the glossary and nowhere else. |
 
 ---
 
@@ -176,7 +177,12 @@ The exercise cell carries both the stub and its check, so the two are never sepa
 
 **An unattempted check reads as unattempted, not failed.** This was the module lead's call. `CheckResult` currently renders `✓` or `✗`. It gains a third state: when the value handed to `check()` is the stub sentinel, it renders as *not attempted yet* with neutral wording and no cross. A wrong answer still gets `✗`; only an untouched stub gets the neutral state. So a visitor to the site sees a complete, working lesson with its exercises visibly waiting, and a student who answers wrongly is still told plainly.
 
-**Deliberately-failing cells** — the traceback-reading material in stage 1, where the whole point is that the student sees a real exception — carry the `raises-exception` cell tag, which nbclient honours. This keeps the global "notebooks must run clean" guarantee intact rather than relaxing it; `scripts/run_notebooks.py` must be confirmed to respect the tag.
+**Deliberately-failing cells** — the traceback-reading material in stage 1, where the whole point is that the student sees a real exception — need **two** mechanisms, not one. A spike established this after the design was first written, and it corrects what this section originally claimed:
+
+- `scripts/run_notebooks.py` runs on nbclient, which honours the **`raises-exception` cell tag**. Confirmed working as-is: a tagged raising cell passes the runner.
+- **Quarto ignores that tag** and fails the whole render, producing no page at all. Its own mechanism is the cell option **`#| error: true`**, as the first line of the cell's source.
+
+With both in place the runner passes, the render succeeds, the traceback appears on the page, and execution continues to the next cell — all confirmed. Either one alone breaks something: the tag alone breaks the published site, the cell option alone breaks CI. This keeps the global "notebooks must run clean" guarantee intact rather than relaxing it, and because getting it half-right is so easy, a test asserts that the two always appear together.
 
 **Handoff checks recompute rather than look up.** A handoff asks the student to do something for *their* slice, so there are eight right answers, and `checks/expected.json` holds one value per name. Instead, a handoff check derives the expected value at run time from the canonical slice definition (§7.1) — `check_slice(name, value, slice_id)` — so every slice is covered by one definition, and a student whose filter does not match the canonical one is told so rather than silently passing.
 
@@ -217,7 +223,23 @@ Handoffs build the second half: the join, the rate, and an honest paragraph on w
 
 Its sections appear as the week proceeds, each added by a handoff: the slice and why; first look; cleaning; description; the join; rates; what this does not show. It is theirs — not executed by CI, not stripped, not graded.
 
-### 7.8 Repository shape
+### 7.8 Language and register
+
+Taken by the module lead. Every student reads this material in English, and for most of them English is a second language. **The course is to be understood in English first.** A Chinese glossary helps a reader past a word they do not know; it is not a parallel translation, and Chinese appears nowhere else in the module.
+
+That makes the prose a design constraint, not a matter of taste. It binds lesson text, hint wording, check messages, the workbook template's prompts, and the site's pages:
+
+- **One idea per sentence.** Short sentences. If a sentence needs a comma to hold two clauses together, it is usually two sentences.
+- **Plain words over precise-sounding ones.** "Use" not "utilise", "about" not "regarding", "before" not "prior to".
+- **Active voice**, and name who does the thing: "you filter the table", not "the table is filtered".
+- **No idioms, no metaphors, no humour that depends on English.** "Bear in mind", "a stab at it", "down the line" all have to go.
+- **Plain verbs over phrasal verbs** where one exists: "cancel" not "call off", "reduce" not "cut down on".
+- **Every technical term is defined the first time it appears**, in one short sentence, and added to the glossary. A term is not optional vocabulary — `DataFrame`, `index`, `traceback` and `kernel` all need this.
+- **No unexplained abbreviations.** Write it out once, then abbreviate.
+
+This is a constraint a careful author meets and a hurried one does not, and most of the material will be written by someone who never read this page. So it is enforced mechanically as well as stated: a prose gate measures sentence length across lesson markdown and fails CI when the material drifts back towards this document's own register, which is too dense for the audience. The gate is a floor, not the goal — passing it is not the same as writing well for these readers.
+
+### 7.9 Repository shape
 
 ```
 notebooks/01-foundations/     lesson notebooks, standalone, CI-run
@@ -269,17 +291,19 @@ Taken by the module lead:
 3. A shortlist of pre-vetted slices rather than a free choice.
 4. The companion-workbook approach (§6, option 1).
 5. The published site shows exercises as **unattempted, not wrong**.
+6. **Plain English, understood in English first** (§7.8). Chinese stays in the glossary.
 
 Taken by me, as the design's author, in response to the builder check:
 
-6. Road-level join, with the two road columns added to the subset and the data rebuilt (§7.6).
-7. Handoff checks recompute from canonical slice definitions in `cwai.slices` (§7.1, §7.4).
-8. Executable stubs — `answer = ...` — and `raises-exception` for deliberate failures (§7.4).
-9. Everyone joins at authority level; finer denominators are a bonus (§7.6).
-10. A fourth hint tier, `answer`, for prose model answers (§7.2).
-11. No second, JavaScript implementation of the self-check (§7.2).
-12. Git stays out; stage 2 teaches diff-reading from the agent's output (§3).
-13. A `reveal()` helper so predict-before-you-run works on the site (§7.3).
-14. `src/cwai/hints.py` and its render test are the plan's first task, because the spike artefact is gone (§7.2).
+7. Road-level join, with the two road columns added to the subset and the data rebuilt (§7.6).
+8. Handoff checks recompute from canonical slice definitions in `cwai.slices` (§7.1, §7.4).
+9. Executable stubs — `answer = ...` — and the dual mechanism for deliberately-failing cells (§7.4).
+10. Everyone joins at authority level; finer denominators are a bonus (§7.6).
+11. A fourth hint tier, `answer`, for prose model answers (§7.2).
+12. No second, JavaScript implementation of the self-check (§7.2).
+13. Git stays out; stage 2 teaches diff-reading from the agent's output (§3).
+14. A `reveal()` helper so predict-before-you-run works on the site (§7.3).
+15. `src/cwai/hints.py` and its render test are the plan's first task, because the spike artefact is gone (§7.2).
+16. The language constraint is enforced by a prose gate in CI, not by a note (§7.8).
 
 Corrected on this revision: the after-dark comparison is 31.75% against 27.75% in daylight, not against a "28.5% baseline", which does not reproduce.
