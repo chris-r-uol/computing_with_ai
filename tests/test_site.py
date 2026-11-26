@@ -331,6 +331,47 @@ def test_accessibility_statement_is_ready_to_publish():
     )
 
 
+# Everything a student reads, for the placeholder gate below.
+# site/accessibility.qmd is left to the test above, which says what is missing
+# in that file by name. The glossary is here because a term left unfinished
+# there is read on every page that uses the word.
+PUBLISHED_CONTENT = (
+    ("site", "*.qmd"),
+    ("site/_stages", "*.qmd"),
+    ("hints", "*.yml"),
+    ("notebooks", "**/*.ipynb"),
+    ("student", "**/*.ipynb"),
+)
+
+
+@pytest.mark.skipif(
+    not os.environ.get("CWAI_PUBLISH_GATE"),
+    reason="publication gate: only enforced by the site workflow",
+)
+def test_no_placeholder_is_left_in_student_facing_content():
+    """Fails while a TODO remains in content a student reads.
+
+    The same mechanism as the statement gate above, and for the same reason. A
+    placeholder rests on somebody remembering it, and that is how one ships.
+    The glossary is the case this was written for: a term can be left
+    unfinished there while every page that uses the word still publishes.
+    """
+    left = []
+    for folder, pattern in PUBLISHED_CONTENT:
+        for path in sorted((REPO / folder).glob(pattern)):
+            if path.name == "accessibility.qmd":
+                continue  # named by the test above, with its own message
+            lines = path.read_text(encoding="utf-8").splitlines()
+            left += [
+                f"{path.relative_to(REPO)}:{number}: {line.strip()[:120]}"
+                for number, line in enumerate(lines, start=1)
+                if "TODO" in line
+            ]
+    assert not left, (
+        "supply what each line asks for, then remove the marker:\n" + "\n".join(left)
+    )
+
+
 def test_the_statement_names_a_measuring_script_and_it_is_committed():
     """The statement publishes numbers, so what produced them must be here.
 
