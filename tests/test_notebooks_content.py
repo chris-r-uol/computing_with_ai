@@ -154,6 +154,20 @@ def test_the_lesson_exercises_each_mechanism_once():
         assert call in source, f"the lesson never calls {call}"
 
 
+def test_the_lesson_shows_which_table_each_slice_cuts_before_it_asks():
+    """Exercise 4 asks the student to say whether they counted people.
+
+    The lesson used to print ``slices.list_slices()``, which is eight bare
+    ids, and nothing on the page said which slices hold people. A student on
+    ``cyclists`` could not answer the question they were being asked. The
+    lesson and the workbook template now show the same
+    ``slices.shortlist()``, whose ``table`` column answers it.
+    """
+    source = all_source(LESSON)
+    assert "slices.shortlist()" in source, "the lesson prints no slice table"
+    assert "`table` column" in source, "nothing in the prose points at it"
+
+
 def test_the_lesson_teaches_on_the_demo_slice_not_a_students_slice():
     """No student's chosen slice may be worked through for them."""
     source = all_source(LESSON)
