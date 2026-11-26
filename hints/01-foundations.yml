@@ -2,10 +2,30 @@
 #
 # Keyed by the exercise id in each exercise cell's metadata.cwai.id. Every
 # exercise needs a `nudge` and a `method`; `code` is optional. See README.md.
-# No notebook in this stage has exercises yet; entries arrive with them:
-#
-# foundations-loops-1:
-#   nudge: ...
-#   method: ...
-#   code: |
-#     ...
+
+first-look-row-count:
+  nudge: Look at the first line of the output. Many tables report their size there.
+  method: Ask the table for its shape. The shape has two numbers. The first is the
+    number of rows. Read that one.
+  code: |
+    # shape is a pair: (rows, columns).
+    # Item 0 of the pair is the number of rows.
+    row_count = collisions.shape[0]
+
+first-look-severity-split:
+  nudge: Find the column that says how serious each collision was. Look at the values in it.
+  method: Count how many times each value appears in the severity column. Then
+    divide each count by the total number of rows. This gives a share for each value.
+  code: |
+    # Count each severity value, as a share of all rows.
+    shares = collisions["severity"].value_counts(normalize=True)
+
+first-look-why-blank-coordinates:
+  nudge: Look at the rows that have blank coordinates. Ask what they have in common.
+  method: Filter to the rows with blank coordinates. Then count their values in
+    other columns, such as the year. If one value stands out, that is a clue.
+    Think about how each record was first written down.
+  answer: Some records were written down without a map position. This happens, for
+    example, when the police could not reach the exact place. The data keeps
+    these collisions, but it leaves the coordinates blank. A blank value means
+    "not recorded". It does not mean zero.

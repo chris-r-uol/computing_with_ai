@@ -43,3 +43,4 @@ dev = [
 [tool.pytest.ini_options]
 # scripts/ is not a package; let tests import the standalone tools in it.
 pythonpath = ["scripts"]
+markers = ["slow: renders a page with Quarto, which takes several seconds"]
