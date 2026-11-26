@@ -178,6 +178,13 @@ def test_the_data_page_can_be_written_without_a_render(tmp_path, monkeypatch):
     The page is not committed, and the gate fails on a path it cannot read
     rather than passing over it, so this is the step that makes it readable. A
     full render would also write it, at the cost of executing every notebook.
+
+    CI's dependency on this has two halves, and a test owns each. This one owns
+    the flag: that ``--write-data-page`` writes a complete page. It deliberately
+    writes somewhere harmless rather than into ``site/``, so it says nothing
+    about where the real page lands. The other half -- that the page is there
+    when the gate looks in ``site/`` -- belongs to the ``gated_target`` fixture
+    in ``tests/test_check_prose.py``, which writes it if a fresh clone has not.
     """
     monkeypatch.setattr(render_site, "SITE_DIR", tmp_path)
     assert render_site.main(["--write-data-page"]) == 0

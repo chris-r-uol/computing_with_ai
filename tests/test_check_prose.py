@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+import render_site
 import yaml
 from check_prose import (
     EXEMPT,
@@ -356,10 +357,56 @@ def test_main_walks_a_directory_for_the_files_it_knows(tmp_path):
     assert main([str(tmp_path / "hints")]) == 1
 
 
-@pytest.mark.parametrize("target", _gated_paths())
-def test_the_gated_material_in_this_repository_passes(target):
+# The only path in the list CI gates that is generated rather than committed.
+# Keeping this set to one name is deliberate: every other gated path is in the
+# repository, so an absent one is a real unusable-target and must still fail.
+GENERATED = frozenset({"site/data.qmd"})
+
+
+@pytest.fixture
+def gated_target(request) -> Path:
+    """One gated path, with the generated page written first if it is absent.
+
+    ``site/data.qmd`` is built from the dataset registry at render time and is
+    not committed, so after a fresh clone it does not exist. Without this, the
+    case for it failed on a developer's first ``uv run pytest`` with nothing to
+    say why, and passed only for someone who had run the renderer by hand.
+
+    Writing it dirties nothing anyone would notice: the file is gitignored, and
+    both ``render_site.py`` and the CI step before the gate overwrite it.
+
+    This fixture owns one half of the dependency CI rests on -- that the page
+    exists where the gate looks for it. The other half, that the flag writes
+    the page at all, is owned by
+    ``tests/test_site.py::test_the_data_page_can_be_written_without_a_render``.
+    """
+    path = REPO_ROOT / request.param
+    if request.param in GENERATED and not path.exists():
+        path.write_text(render_site.data_page(), encoding="utf-8")
+    return path
+
+
+@pytest.mark.parametrize("gated_target", _gated_paths(), indirect=True)
+def test_the_gated_material_in_this_repository_passes(gated_target):
     """The gate is only a floor if the material already standing on it passes."""
-    assert main([str(REPO_ROOT / target)]) == 0
+    assert main([str(gated_target)]) == 0
+
+
+def test_only_the_generated_page_is_written_for_the_gate():
+    """The fixture is narrow on purpose, and this is what keeps it narrow.
+
+    A committed path that goes missing is a real unusable-target and must keep
+    failing. So every gated path except the generated one has to be here in the
+    repository, and this fails if a second generated path joins the CI list
+    without someone deciding what should write it.
+    """
+    assert GENERATED == frozenset({"site/data.qmd"})
+    absent = [
+        path
+        for path in _gated_paths()
+        if path not in GENERATED and not (REPO_ROOT / path).exists()
+    ]
+    assert absent == []
 
 
 def test_the_exempt_pages_are_not_in_the_paths_ci_gates():
