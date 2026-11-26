@@ -183,8 +183,21 @@ def test_the_rates_section_sends_a_slice_without_a_denominator_away_first():
     assert "highest by count" in text and "highest by rate" in text
 
 
-def test_the_limits_section_has_an_example_for_a_slice_with_no_denominator():
-    assert "how many people walk" in section("## 7.")
+def test_the_limits_section_has_an_example_for_each_slice_with_no_denominator():
+    """Two slices have no denominator, and each needs its own example.
+
+    The defining columns are hard-coded: each lives inside a slice's select
+    lambda. Whoever changes an example must change this test too.
+    """
+    lines = section("## 7.").splitlines()
+    strong = [line for line in lines if "strong sentence" in line]
+    assert len(strong) == 3, strong
+    pedestrians = [line for line in strong if "for pedestrians" in line]
+    after_dark = [line for line in strong if "for after dark" in line]
+    assert len(pedestrians) == 1 and "`casualty_type`" in pedestrians[0]
+    assert len(after_dark) == 1 and "`light_conditions`" in after_dark[0]
+    assert "how many people walk" in pedestrians[0]
+    assert "traffic after dark" in after_dark[0]
 
 
 def test_a_stale_student_copy_of_the_template_is_reported_as_orphaned(tmp_path):
