@@ -98,8 +98,9 @@ def test_a_raising_cell_renders_its_traceback_instead_of_failing_the_render(tmp_
     html = (out / "notebooks/90-stretch/raises_exception.html").read_text()
     assert "ValueError" in html
     assert "invalid literal" in html
-    # This cell comes after the failing one, so it proves execution went on.
-    assert "execution-continued-sentinel" in html
+    # The last cell prints a computed value that is not in its own source, so
+    # this text can only come from the cell having run after the failing one.
+    assert "sentinel 42" in html
 
 
 def _raising_cell_problems(nb) -> list[str]:
