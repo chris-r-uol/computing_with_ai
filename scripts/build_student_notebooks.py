@@ -34,6 +34,9 @@ from cwai.hints import EXCLUSIVE_TIERS, HINT_TIERS, REQUIRED_TIERS
 
 SOLUTION_TAG = "solution"
 EXERCISE_TAG = "exercise"
+# The student's own workbook. It lives under notebooks/ so CI runs it, but it is
+# not a lesson, so it is never copied into student/.
+TEMPLATE_NAME = "my-analysis-template.ipynb"
 STUB_MARKER = "answer = ...  # your code here"
 # Markdown and raw solution cells get a note, not a code comment (which would
 # render as a heading).
@@ -112,6 +115,7 @@ def _expected(src_root: Path) -> dict[Path, bytes]:
             strip_solutions(nbformat.read(p, as_version=4))
         )
         for p in _source_notebooks(src_root)
+        if p.name != TEMPLATE_NAME
     }
 
 
