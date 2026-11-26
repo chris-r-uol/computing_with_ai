@@ -29,6 +29,8 @@ HINTS_FILE = REPO / "hints" / "01-foundations.yml"
 # check("name", ...) and check_slice("name", ...): the name is the first
 # argument, so the opening of the call is enough to read it.
 _CHECK_CALL = re.compile(r"\bcheck(?:_slice)?\(\s*[\"']([^\"']+)[\"']")
+# One printed CheckResult: its mark, then the check name it is about.
+_RESULT_LINE = re.compile(r"^([✓✗○])\s+(\S+?):")
 
 
 def all_source(path: Path) -> str:
@@ -38,8 +40,15 @@ def all_source(path: Path) -> str:
 
 
 def check_names_called(path: Path) -> list[str]:
-    """The check names the notebook passes to ``check`` or ``check_slice``."""
-    return _CHECK_CALL.findall(all_source(path))
+    """The check names the notebook passes to ``check`` or ``check_slice``.
+
+    Code cells only. ``all_source`` joins every cell, so a markdown line that
+    mentions a ``check(...)`` call -- a lesson explaining the mechanism, say --
+    would otherwise be counted as a call that produced no result.
+    """
+    nb = nbformat.read(path, as_version=4)
+    code = "\n".join(c.source for c in nb.cells if c.cell_type == "code")
+    return _CHECK_CALL.findall(code)
 
 
 def _executed(path: Path) -> nbformat.NotebookNode:
@@ -102,22 +111,41 @@ def test_every_check_name_the_lesson_uses_resolves():
         assert name in checks.load_expected() or name in slices.METRICS
 
 
-def test_every_answer_the_full_lesson_checks_is_still_true():
+def test_every_stored_answer_the_full_lesson_checks_is_still_true():
     """Not that the lesson runs: that the answers it checks against are right.
 
     ``checks/expected.json`` holds answers measured from the data by hand, and a
     rebuilt data subset moves them without breaking anything the other tests
     watch. The lesson would still run, its page would still render, and every
-    student's exercise would quietly be marked wrong. Every solution is present
-    in the full notebook, so every check in it must read as passed, and none may
-    read as unattempted.
+    student's exercise would quietly be marked wrong.
+
+    Every exercise checked against a stored answer has its solution in the full
+    notebook, so each of those must read as passed. A handoff is the one
+    exception, and it is not an exemption: it ships ``my_slice = ...``, because
+    no student's slice may be the lesson's default, so it reads as unattempted
+    here -- and it has no stored answer to go stale, since ``check_slice``
+    recomputes from ``slices.METRICS``. Nothing may read as wrong either way.
     """
     lines = check_result_lines(_executed(LESSON))
     assert len(lines) == len(check_names_called(LESSON)), (
         f"expected one result per check call, found {lines}"
     )
-    wrong = [line for line in lines if not line.startswith("✓")]
-    assert not wrong, "a check in the full lesson did not pass:\n" + "\n".join(wrong)
+    results = {}
+    for line in lines:
+        match = _RESULT_LINE.match(line)
+        assert match, f"could not read a check result out of {line!r}"
+        results[match.group(2)] = (match.group(1), line)
+
+    wrong = [line for mark, line in results.values() if mark == "✗"]
+    assert not wrong, "a check in the full lesson is wrong:\n" + "\n".join(wrong)
+
+    stored = checks.load_expected()
+    missed = [
+        line for name, (mark, line) in results.items() if mark != "✓" and name in stored
+    ]
+    assert not missed, "a check against a stored answer did not pass:\n" + "\n".join(
+        missed
+    )
 
 
 def test_the_lesson_exercises_each_mechanism_once():
