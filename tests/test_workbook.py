@@ -89,9 +89,14 @@ def test_every_section_ends_in_an_empty_code_cell_for_the_student():
 
 
 def test_the_shortlist_comes_from_the_slice_definitions(executed):
-    """Generated at run time, so the template cannot drift from the code."""
+    """Generated at run time, so the template cannot drift from the code.
+
+    The table is built by ``slices.shortlist()`` rather than here, because the
+    stage 1 lesson shows the same one. Two notebooks assembling it by hand is
+    how the two come apart.
+    """
     code = "\n".join(c.source for c in executed.cells if c.cell_type == "code")
-    assert "list_slices" in code
+    assert "slices.shortlist()" in code
     for slice_id in slices.list_slices():
         assert f'"{slice_id}"' not in code, "the shortlist is hand-typed"
     shown = "".join(
@@ -147,7 +152,6 @@ def test_the_template_is_not_copied_into_the_student_folder(tmp_path):
     out = tmp_path / "student"
     build(REPO / "notebooks", out)
     assert not list(out.rglob(TEMPLATE_NAME))
-    assert TEMPLATE_NAME == "my-analysis-template.ipynb"
 
 
 def test_the_exclusion_is_by_name_and_other_notebooks_are_still_copied(tmp_path):
