@@ -159,3 +159,39 @@ def test_the_exclusion_is_by_name_and_other_notebooks_are_still_copied(tmp_path)
     build(tmp_path / "notebooks", out)
     assert [p.name for p in out.rglob("*.ipynb")] == ["lesson.ipynb"]
     assert stale_paths(tmp_path / "notebooks", out) == []
+
+
+def section(heading_start):
+    cells = load_template().cells
+    start = next(i for i, c in enumerate(cells) if c.source.startswith(heading_start))
+    return cells[start].source
+
+
+def test_everyone_joins_the_traffic_counts_at_authority_level():
+    """Design 7.6: no slice is left without a join, so no choice of table."""
+    text = section("## 5.")
+    assert "load_traffic_counts" in text
+    assert "authority" in text
+    assert "denominator column" in text
+    assert "Pick a second table" not in text
+
+
+def test_the_rates_section_sends_a_slice_without_a_denominator_away_first():
+    text = section("## 6.")
+    assert text.index("no denominator") < text.index("Compare")
+    assert "road" not in text.lower().replace("roads", "")  # no "which road"
+    assert "highest by count" in text and "highest by rate" in text
+
+
+def test_the_limits_section_has_an_example_for_a_slice_with_no_denominator():
+    assert "how many people walk" in section("## 7.")
+
+
+def test_a_stale_student_copy_of_the_template_is_reported_as_orphaned(tmp_path):
+    src = tmp_path / "notebooks"
+    (src / "04-project").mkdir(parents=True)
+    nbformat.write(nbformat.v4.new_notebook(), src / "04-project" / TEMPLATE_NAME)
+    out = tmp_path / "student"
+    (out / "04-project").mkdir(parents=True)
+    nbformat.write(nbformat.v4.new_notebook(), out / "04-project" / TEMPLATE_NAME)
+    assert stale_paths(src, out) == [Path("04-project") / TEMPLATE_NAME]
