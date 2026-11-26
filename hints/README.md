@@ -2,13 +2,13 @@
 
 Every exercise in a notebook has hints. This page is for whoever writes them.
 
-## Why there are three tiers
+## Why there are four tiers
 
 A student working alone at 22:00, with nobody to ask, needs to be able to get
 unstuck. Answers are deliberately open: a student who cannot check their work
 against a known truth cannot learn alone. So the tiers are not a lock. They exist
 so that the *smallest useful* help is easy to find, before a student reaches for
-the whole answer. All three tiers are always available.
+the whole answer. All four tiers are always available.
 
 Because the answer is always reachable, an exercise that only asks a student to
 "write code that produces X" teaches little. Design exercises around reading,
@@ -22,6 +22,7 @@ over the step they are stuck on, not hand them the exercise.
 | `nudge` | what to look at | no |
 | `method` | the approach, in prose | no |
 | `code` | the worked answer | yes |
+| `answer` | a model answer, in prose | no |
 
 - **nudge**: points attention, and nothing more. "Look at what type the column
   has after you read the file." It answers "where do I look?", not "what do I do?".
@@ -33,6 +34,11 @@ over the step they are stuck on, not hand them the exercise.
 - **code**: the worked answer, with enough explanation that the student can read
   it rather than copy it. Optional, but write it: a student who reaches the end
   of the tiers should find a complete, correct answer to compare against.
+
+- **answer**: a model answer in prose, for an "explain why" exercise. It is the
+  written-answer version of `code`. An exercise has `code` or `answer`, never
+  both. Use `code` when the student writes code. Use `answer` when the student
+  writes an explanation.
 
 Write the nudge first. If you find it gives the approach away, it is really a
 method; if the method needs code to make sense, the exercise is probably too big
@@ -94,5 +100,6 @@ The other order leaves `student/` built from the unformatted notebooks, and
 ## What CI checks
 
 - every exercise has a non-blank `nudge` and `method`;
-- no tier other than `nudge`, `method` and `code` appears for an exercise;
+- no tier other than `nudge`, `method`, `code` and `answer` appears for an exercise;
+- no exercise has both `code` and `answer`;
 - the committed student notebooks match what the builder produces from the full ones.

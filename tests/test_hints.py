@@ -70,13 +70,13 @@ def test_missing_hint_names_the_exercise_and_tier():
 
 def test_hint_tiers_are_restricted_to_known_names():
     with pytest.raises(MissingHintError) as exc:
-        validate_hints({"ex-1": {"nudge": "a", "method": "b", "answer": "c"}}, ["ex-1"])
-    assert "answer" in str(exc.value)
+        validate_hints({"ex-1": {"nudge": "a", "method": "b", "hint": "c"}}, ["ex-1"])
+    assert "hint" in str(exc.value)
 
 
 def test_complete_hints_pass_and_code_tier_is_optional():
     validate_hints({"ex-1": GOOD, "ex-2": {**GOOD, "code": "x = 1"}}, ["ex-1", "ex-2"])
-    assert HINT_TIERS == ("nudge", "method", "code")
+    assert HINT_TIERS == ("nudge", "method", "code", "answer")
 
 
 def test_exercise_with_no_hints_at_all_is_reported():
@@ -346,3 +346,41 @@ def test_rendered_hint_survives_a_quarto_render(tmp_path):
         assert hints.TIER_LABELS[tier] in html
         assert text in html
     assert not has_open_details(html)
+
+
+def test_an_answer_tier_is_accepted():
+    validate_hints(
+        {"demo": {"nudge": "n", "method": "m", "answer": "because..."}}, ["demo"]
+    )
+
+
+def test_code_and_answer_together_are_rejected():
+    with pytest.raises(MissingHintError) as exc:
+        validate_hints(
+            {"demo": {"nudge": "n", "method": "m", "code": "c", "answer": "a"}},
+            ["demo"],
+        )
+    assert "code" in str(exc.value) and "answer" in str(exc.value)
+
+
+def test_an_unrecognised_tier_is_still_rejected():
+    with pytest.raises(MissingHintError):
+        validate_hints({"demo": {"nudge": "n", "method": "m", "hint": "x"}}, ["demo"])
+
+
+def test_tier_names_come_from_cwai_hints():
+    import build_student_notebooks
+
+    assert build_student_notebooks.HINT_TIERS is hints.HINT_TIERS
+    assert build_student_notebooks.REQUIRED_TIERS is hints.REQUIRED_TIERS
+
+
+def test_every_shipped_foundations_hint_renders():
+    path = REPO / "hints" / "01-foundations.yml"
+    shipped = load_hints(path)
+    assert shipped, "hints/01-foundations.yml holds no entries"
+    for ex_id in shipped:
+        html = hints.hint(ex_id, path).data
+        assert ex_id in html
+        for tier in shipped[ex_id]:
+            assert hints.TIER_LABELS[tier] in html
