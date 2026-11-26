@@ -1,8 +1,8 @@
 """Self-checks: let a student test an answer against a known truth.
 
-Answers live in ``checks/expected.json``, which the website's JavaScript reads
-too; its shape is pinned by ``checks/expected.schema.json`` and the comparison
-rules both implementations must follow are written down in ``checks/README.md``.
+Answers live in ``checks/expected.json``. Its shape is pinned by
+``checks/expected.schema.json`` and the comparison rules are written down in
+``checks/README.md``. This module is the only implementation of those rules.
 Every message a student can see says what was expected, what was found, and
 what to do next.
 """
@@ -16,9 +16,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from cwai import registry
+from cwai import registry, slices
 
 TOLERANCE = 1e-6
+
+UNATTEMPTED = Ellipsis
 
 _EXPECTED_PATH = registry.repo_root() / "checks" / "expected.json"
 
@@ -39,13 +41,36 @@ class CheckResult:
     name: str
     passed: bool
     message: str
+    attempted: bool = True
 
     def __bool__(self) -> bool:
         return self.passed
 
     def __repr__(self) -> str:
+        # Three marks with three different shapes, so no state depends on colour.
+        # The third state is never a cross: an untouched exercise is not a wrong one.
+        if not self.attempted:
+            return f"○ {self.name}: {self.message}"
         mark = "✓" if self.passed else "✗"
         return f"{mark} {self.name}: {self.message}"
+
+
+_UNATTEMPTED_MESSAGE = (
+    "not attempted yet. Replace the ... with your answer, then run the cell again."
+)
+# A handoff has a second stub: the slice the answer is for. A student who has
+# written their answer and not chosen a slice has followed the instruction
+# above already, so telling them to follow it again is the wrong thing to read
+# at the moment they are stuck. Both messages keep the words "not attempted
+# yet", so the three states still read the same way.
+_NO_SLICE_MESSAGE = (
+    "not attempted yet. You have not chosen a slice. Go back to the cell that "
+    "sets your slice id and put yours in. Then run this cell again."
+)
+
+
+def _unattempted(name: str, message: str = _UNATTEMPTED_MESSAGE) -> CheckResult:
+    return CheckResult(name, False, message, attempted=False)
 
 
 def load_expected(path: Path | None = None) -> dict:
@@ -121,20 +146,26 @@ def _compare(
     )
 
 
+def _unknown_name_message(name: str, known: Iterable[str]) -> str:
+    near = difflib.get_close_matches(name, list(known), n=3)
+    hint = (
+        f"Did you mean {' or '.join(repr(n) for n in near)}?"
+        if near
+        else "Check the spelling against the name given in the notebook."
+    )
+    return (
+        f"There is no check called {name!r}. {hint} "
+        "The name must match the one in the notebook exactly."
+    )
+
+
 def check(name: str, value: object) -> CheckResult:
     """Compare ``value`` with the stored answer called ``name``."""
     expected = load_expected()
     if name not in expected:
-        near = difflib.get_close_matches(name, expected, n=3)
-        hint = (
-            f"Did you mean {' or '.join(repr(n) for n in near)}?"
-            if near
-            else "Check the spelling against the name given in the notebook."
-        )
-        raise UnknownCheckError(
-            f"There is no check called {name!r}. {hint} "
-            "The name must match the one in the notebook exactly."
-        )
+        raise UnknownCheckError(_unknown_name_message(name, expected))
+    if value is UNATTEMPTED:
+        return _unattempted(name)
     entry = expected[name]
     problem = _compare(
         entry["type"], entry["value"], entry.get("tolerance", TOLERANCE), value
@@ -146,6 +177,8 @@ def check(name: str, value: object) -> CheckResult:
 
 def expect_columns(df, columns: Iterable[str]) -> None:
     """Raise CheckFailed unless every named column is present."""
+    if df is UNATTEMPTED:
+        return
     wanted = list(columns)
     missing = [c for c in wanted if c not in df.columns]
     if missing:
@@ -164,6 +197,8 @@ def expect_shape(df, rows: int | None = None, cols: int | None = None) -> None:
             "expect_shape needs something to check: pass rows=, cols=, or both, "
             "as in expect_shape(df, rows=12) or expect_shape(df, rows=12, cols=3)."
         )
+    if df is UNATTEMPTED:
+        return
     found_rows, found_cols = df.shape
     wanted, found = [], []
     if rows is not None and found_rows != rows:
@@ -177,3 +212,36 @@ def expect_shape(df, rows: int | None = None, cols: int | None = None) -> None:
             f"Expected {' and '.join(wanted)} but found {' and '.join(found)}. "
             "Check any filtering, merging or dropping steps before this point."
         )
+
+
+def check_slice(name: str, value: object, slice_id: str) -> CheckResult:
+    """Compare ``value`` with the answer for one student's slice of the data.
+
+    A handoff has two stubs, not one: the answer, and the slice id it is for.
+    Either left untouched is an unattempted exercise, so an unpicked slice gets
+    the same neutral result as an unanswered question. A student who has not
+    chosen a slice yet has not got an exercise wrong.
+
+    The two say different things, though. An unpicked slice is named as such
+    and points at the cell that sets the slice id, because a student may have
+    written their answer already. The slice is reported first when both stubs
+    are untouched, since that is the one to fill in first.
+
+    An unknown ``slice_id`` still raises ``slices.UnknownSliceError``, which
+    explains itself: only the stub sentinel is read as unattempted, so a typo
+    is never excused. An unknown ``name`` raises ``UnknownCheckError``, and it
+    is checked first, because that is a mistake in the course material rather
+    than a blank answer.
+    """
+    if name not in slices.METRICS:
+        raise UnknownCheckError(_unknown_name_message(name, slices.METRICS))
+    if slice_id is UNATTEMPTED:
+        return _unattempted(name, _NO_SLICE_MESSAGE)
+    if value is UNATTEMPTED:
+        return _unattempted(name)
+    the_slice = slices.get(slice_id)
+    metric = slices.METRICS[name]
+    problem = _compare(metric.kind, metric.compute(the_slice), metric.tolerance, value)
+    if problem is None:
+        return CheckResult(name, True, "passed")
+    return CheckResult(name, False, problem)

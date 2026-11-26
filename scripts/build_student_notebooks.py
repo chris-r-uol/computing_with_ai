@@ -5,10 +5,14 @@ under ``student/`` are generated and never hand-maintained. A solution cell is
 replaced by a stub, and its outputs are cleared, so no answer text leaves with it.
 
 Solutions are deliberately open elsewhere in the module: students can always
-reach the answer through the hint tiers (today in ``hints/``, and on the site
-once that interface is built). What must never happen is
-an answer sitting in the notebook a student is meant to write in, which is why
-this stripping is tested and checked in CI.
+reach the answer through the hint tiers. The hints live in ``hints/`` and show
+inline in the notebook. What must never happen is an answer sitting in the
+notebook a student is meant to write in, which is why this stripping is tested
+and checked in CI.
+
+Authoring note: a solution cell must bind ``answer``. The stub binds that name
+(``answer = ...``), so a later cell that uses it still runs in the student copy.
+An exercise that is not attempted hands ``...`` to ``check()``.
 
 Usage:
     uv run python scripts/build_student_notebooks.py            # regenerate
@@ -26,17 +30,20 @@ from pathlib import Path
 import nbformat
 import yaml
 
+from cwai.hints import EXCLUSIVE_TIERS, HINT_TIERS, REQUIRED_TIERS
+
 SOLUTION_TAG = "solution"
 EXERCISE_TAG = "exercise"
-STUB_MARKER = "# your code here"
+# The student's own workbook. It lives under notebooks/ so CI runs it, but it is
+# not a lesson, so it is never copied into student/.
+TEMPLATE_NAME = "my-analysis-template.ipynb"
+STUB_MARKER = "answer = ...  # your code here"
 # Markdown and raw solution cells get a note, not a code comment (which would
 # render as a heading).
 TEXT_STUB = "*Write your answer here.*"
 # The full notebooks wrap every solution source in this marker. The site render
 # test greps rendered HTML for it, so a stripping bug fails that test as well.
 SOLUTION_MARKER = "CWAI-SOLUTION"
-HINT_TIERS = ("nudge", "method", "code")
-REQUIRED_TIERS = ("nudge", "method")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 NOTEBOOKS_DIR = REPO_ROOT / "notebooks"
@@ -108,6 +115,7 @@ def _expected(src_root: Path) -> dict[Path, bytes]:
             strip_solutions(nbformat.read(p, as_version=4))
         )
         for p in _source_notebooks(src_root)
+        if p.name != TEMPLATE_NAME
     }
 
 
@@ -188,6 +196,12 @@ def validate_hints(
             raise MissingHintError(
                 f"exercise {ex_id!r} has unrecognised hint tier(s) {unknown}; "
                 f"use only {list(HINT_TIERS)}"
+            )
+        both = sorted(EXCLUSIVE_TIERS & set(tiers))
+        if len(both) == len(EXCLUSIVE_TIERS):
+            raise MissingHintError(
+                f"exercise {ex_id!r} has both {both[0]!r} and {both[1]!r}; "
+                f"use one or the other"
             )
         for tier in REQUIRED_TIERS:
             text = tiers.get(tier)

@@ -14,6 +14,7 @@ from build_student_notebooks import (
     strip_solutions,
     wrap_solution,
 )
+from run_notebooks import run
 
 SECRET = "answer = 42"
 
@@ -205,3 +206,37 @@ def test_missing_source_directory_is_an_error_not_a_pass(tmp_path, flags, capsys
     args = ["--src", str(tmp_path / "typo"), "--out", str(tmp_path / "o"), *flags]
     assert main(args) != 0
     assert "typo" in capsys.readouterr().err
+
+
+def test_a_stripped_solution_cell_still_binds_a_name():
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [
+        nbformat.v4.new_code_cell(
+            wrap_solution("answer = c.groupby('severity_label').size()"),
+            metadata={"tags": [SOLUTION_TAG]},
+        )
+    ]
+    assert "answer = ..." in strip_solutions(nb).cells[-1].source
+
+
+def test_a_stripped_notebook_executes_end_to_end(tmp_path):
+    """The site renders student/, so an unanswered exercise must not break it."""
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [
+        nbformat.v4.new_code_cell(
+            wrap_solution("answer = 42"), metadata={"tags": [SOLUTION_TAG]}, id="sol"
+        ),
+        nbformat.v4.new_code_cell("print(type(answer).__name__)", id="use"),
+    ]
+    path = tmp_path / "stripped.ipynb"
+    nbformat.write(strip_solutions(nb), path)
+    result = run(path)
+    assert result.passed, result.error
+
+
+def test_a_markdown_solution_cell_still_becomes_a_prose_stub():
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [
+        nbformat.v4.new_markdown_cell("because", metadata={"tags": [SOLUTION_TAG]})
+    ]
+    assert TEXT_STUB in strip_solutions(nb).cells[-1].source

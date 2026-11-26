@@ -1,11 +1,55 @@
 # Hints for the exercises in notebooks/01-foundations/.
 #
 # Keyed by the exercise id in each exercise cell's metadata.cwai.id. Every
-# exercise needs a `nudge` and a `method`; `code` is optional. See README.md.
-# No notebook in this stage has exercises yet; entries arrive with them:
-#
-# foundations-loops-1:
-#   nudge: ...
-#   method: ...
-#   code: |
-#     ...
+# exercise needs a `nudge` and a `method`. It then takes either a `code` tier,
+# the worked answer for an exercise the student writes code for, or an `answer`
+# tier, a model answer in prose for an exercise they write an explanation for.
+# Never both. See README.md.
+
+first-look-row-count:
+  nudge: The table knows how big it is. You do not have to count the rows yourself.
+  method: Ask the table for its shape. The shape is a pair of numbers. The first
+    one is the number of rows, and the second is the number of columns. Read the
+    first one.
+  code: |
+    # shape is a pair: the number of rows, then the number of columns.
+    # Position 0 of a pair holds its first item.
+    answer = collisions.shape[0]
+
+first-look-severity-split:
+  nudge: Find the column that holds the word for each severity. Look at the values
+    in it.
+  method: Count how many times each value appears in that column. Then divide each
+    count by the total number of rows. That gives you a share of the whole table.
+    Multiply the share you want by 100, then round it.
+  code: |
+    # normalize=True turns each count into a share of the total.
+    shares = collisions["severity_label"].value_counts(normalize=True)
+    answer = round(shares["Slight"] * 100, 1)
+
+first-look-why-no-error:
+  nudge: Python ran every line without complaint. Ask what Python is able to check,
+    and what it cannot check.
+  method: Think about the difference between code that runs and code that is right.
+    Then say what Python knew about the list of names. Then say what it did not
+    know about the data.
+  answer: |
+    Python checks that your code can run. It does not know what your code is
+    meant to mean.
+
+    Every line in that cell was legal Python. The list held three names. The
+    code asked for a name by its number, and Python gave the name it was asked
+    for. Python could not know that the numbers were one step out.
+
+    Only a person who knows the data can see a mistake like this one. So check
+    every number against something you already know.
+
+first-look-your-slice-rows:
+  nudge: You do not have to write the filter for your slice. The course package
+    holds it already.
+  method: Pass your slice id to the load function in the slices module. That gives
+    you a table with only your own rows in it. Then ask that table how many rows
+    it has.
+  code: |
+    # len() gives the number of rows in a table.
+    answer = len(slices.load(my_slice))

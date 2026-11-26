@@ -8,10 +8,18 @@ the committed files themselves, through the same loaders a student uses.
 They are the only tests that fail when the data is rebuilt badly, so keep them
 about the data's shape and coverage rather than its exact row counts, which
 change at every upstream refresh.
+
+The road and casualty facts at the foot of this file are the deliberate
+exception, and they are pinned on purpose. Stage 2's whole thesis and two
+numbers written into the stage 1 lesson's prose rest on them, so a rebuild that
+moves one has to fail here rather than publish a page whose text asserts a
+number its own output contradicts. Do not loosen those assertions into shape
+checks; if a refresh moves one, change the material it belongs to as well.
 """
 
 from __future__ import annotations
 
+import pandas as pd
 import pytest
 from build_subsets import (
     CASUALTY_COLUMNS,
@@ -97,3 +105,78 @@ def test_describe_reports_a_present_file_for_every_dataset(key):
     text = data.describe(key)
     assert "currently holds" in text, text
     assert "not on this computer" not in text
+
+
+# STATS19 first_road_class codes -> the prefix the traffic counts use.
+ROAD_CLASS_PREFIX = {1: "M", 2: "A", 3: "A", 4: "B", 5: "C", 6: "U"}
+
+
+def road_key(road_class, road_number):
+    """'A58' from (3, 58); 'A1(M)' from (2, 1); 'U' from (6, 0)."""
+    prefix = ROAD_CLASS_PREFIX[road_class]
+    if road_class == 6:
+        return prefix  # every minor road shares one bucket; the number is 0
+    # 0 means "unclassified" and -1 "unknown"; neither is a real road number.
+    if pd.isna(road_number) or road_number <= 0:
+        return prefix
+    suffix = "(M)" if road_class == 2 else ""
+    return f"{prefix}{road_number}{suffix}"
+
+
+def road_key_series(collisions):
+    return pd.Series(
+        [
+            road_key(cls, num)
+            for cls, num in zip(
+                collisions.first_road_class,
+                collisions.first_road_number,
+                strict=True,
+            )
+        ],
+        index=collisions.index,
+    )
+
+
+def test_major_road_collisions_are_the_joinable_subset():
+    c = data.load_collisions()
+    major = c.first_road_class.isin([1, 2, 3, 4])
+    assert major.sum() == 10_060
+    assert (c.first_road_class == 6).sum() == 10_422
+
+
+def test_a_naive_road_name_join_matches_almost_everything():
+    """98.1% matched, which is why the lesson asks whether the number is true."""
+    keys = road_key_series(data.load_collisions())
+    names = set(data.load_traffic_counts().road_name.dropna())
+    assert keys.isin(names).mean() == pytest.approx(0.981, abs=0.001)
+
+
+def test_the_unclassified_match_is_an_aggregate_bucket_not_a_road():
+    """'U' matches on both sides but means 'every minor road', so the rate is void."""
+    counts = data.load_traffic_counts()
+    assert "U" in set(counts.road_name)
+    assert set(counts.loc[counts.road_name == "U", "road_type"]) == {"Minor"}
+
+
+def test_road_key_never_emits_a_sentinel_or_missing_number():
+    for number in (0, -1, pd.NA):
+        assert road_key(3, number) == "A"
+    assert road_key(6, 0) == "U"
+    assert road_key(2, 1) == "A1(M)"
+
+
+def test_the_casualty_counts_the_lesson_prints_in_its_prose_are_pinned():
+    """Two numbers the stage 1 lesson states as text, not as cell output.
+
+    ``notebooks/01-foundations/01-first-look.ipynb`` says "The answer came out
+    as 120" of the off-by-one count, and "Nearly twenty times as many cyclists"
+    of the fixed one. Both are hard-coded in markdown beside a cell that
+    computes them. A rebuild that moved either would leave the page showing one
+    number while the prose next to it claimed another, and a beginner has no
+    way to tell which to believe.
+    """
+    casualty_type = data.load_casualties()["casualty_type"]
+    # The off-by-one pairing counted code 2 as the cyclists.
+    assert (casualty_type == 2).sum() == 120
+    # Code 1 is the real cyclists: 19.2 times as many, which is "nearly twenty".
+    assert (casualty_type == 1).sum() == 2304

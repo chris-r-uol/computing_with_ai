@@ -16,8 +16,8 @@ for, and where each stops being trustworthy.
 ::: {.cwai-card}
 ## What you will be able to do
 
-Predict what the code will do before you run it, read the diff rather than the
-summary, and write the test that would catch it being wrong.
+Predict what the code will do before you run it. Read the diff rather than the
+summary. Write the test that would catch the code being wrong.
 :::
 
 ::: {.cwai-card}

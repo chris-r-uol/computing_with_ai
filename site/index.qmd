@@ -1,9 +1,9 @@
 ---
 title: "From no Python to a machine-learning project"
 pagetitle: "Computing with AI"
-subtitle: "Four stages, on real road-safety data. Every notebook is readable
-  here in full -- the explanation, the code and the output of running it --
-  with its exercises left for you to do."
+subtitle: "Four stages, on real road-safety data. You can read every notebook
+  here in full: the explanation, the code and its output. You do the exercises
+  yourself."
 toc: false
 include-before-body:
   text: |
@@ -11,9 +11,10 @@ include-before-body:
 ---
 
 This is the reading copy of the Computing with AI course material. The worked
-answers are in `notebooks/` in the repository, and they will reach this site
-through the hint tiers. If something stops working on your computer or your
-connection, you can still read the lesson.
+answers are here too, on each lesson page. Every exercise carries its hints.
+The last hint holds the answer. Each hint stays closed until you click it, so
+you can try the exercise first. If something stops working on your computer or
+your connection, you can still read the lesson.
 
 ## The course, stage by stage
 
@@ -76,8 +77,8 @@ in is marked, and each stage lists its notebooks as they are published.
 
 ## Two ways through the material
 
-Both routes cover the same material. Pick the one that suits you today, and
-know that you can switch at any point.
+Both routes cover the same material. Pick the one that suits you today. You can
+switch at any time.
 
 ::: {.cwai-routes}
 ::: {.route}
@@ -101,8 +102,8 @@ notebook in the Codespace and run it. The Codespace is somewhere to type; the
 explanation is on this page.
 
 ::: {.route-when}
-Choose this if you would rather understand a step before you try it, or if you
-are new to programming and want to see the result before you write any code.
+Choose this if you would rather understand a step before you try it. Choose it
+too if you are new to programming and want to see a result first.
 :::
 :::
 :::

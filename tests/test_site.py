@@ -6,6 +6,7 @@ from pathlib import Path
 
 import nbformat
 import pytest
+import render_site
 import yaml
 from build_student_notebooks import (
     EXERCISE_TAG,
@@ -88,6 +89,65 @@ def test_render_fails_when_a_notebook_errors(tmp_path):
     assert done.returncode != 0
 
 
+@pytest.mark.slow
+def test_a_raising_cell_renders_its_traceback_instead_of_failing_the_render(tmp_path):
+    """Quarto ignores raises-exception; the cell option is what saves the render."""
+    site = _copy_site(tmp_path / "site")
+    out = tmp_path / "out"
+    done = render(site, out, notebooks=[FIXTURES / "raises_exception.ipynb"])
+    assert done.returncode == 0, done.stdout + done.stderr
+    html = (out / "notebooks/90-stretch/raises_exception.html").read_text()
+    assert "ValueError" in html
+    assert "invalid literal" in html
+    # The last cell prints a computed value that is not in its own source, so
+    # this text can only come from the cell having run after the failing one.
+    assert "sentinel 42" in html
+
+
+def _raising_cell_problems(nb) -> list[str]:
+    """Cells that carry only one half of the two-part contract."""
+    problems = []
+    for index, cell in enumerate(nb.cells):
+        if cell.cell_type != "code":
+            continue
+        tagged = "raises-exception" in cell.metadata.get("tags", [])
+        first = cell.source.splitlines()[0].strip() if cell.source else ""
+        optioned = first == "#| error: true"
+        if tagged != optioned:
+            have = "the tag" if tagged else "the cell option"
+            need = "#| error: true" if tagged else "the raises-exception tag"
+            problems.append(f"cell {index} has {have} but not {need}")
+    return problems
+
+
+def test_every_raising_cell_carries_both_mechanisms():
+    """One without the other breaks either CI or the published page."""
+    paths = [
+        path
+        for path in sorted((REPO / "notebooks").rglob("*.ipynb"))
+        if ".ipynb_checkpoints" not in path.parts
+    ]
+    # Without this, renaming notebooks/ makes the constraint silently vacuous.
+    assert paths, "found no notebooks under notebooks/"
+    found = []
+    for path in paths:
+        found += [
+            f"{path.relative_to(REPO)}: {p}"
+            for p in _raising_cell_problems(nbformat.read(path, as_version=4))
+        ]
+    assert not found, "\n".join(found)
+
+
+def test_the_contract_check_catches_a_half_marked_cell():
+    nb = nbformat.read(FIXTURES / "raises_exception.ipynb", as_version=4)
+    assert _raising_cell_problems(nb) == []
+    nb.cells[2].source = "int('not a number')"
+    assert len(_raising_cell_problems(nb)) == 1
+    nb.cells[2].source = "#| error: true\nint('x')"
+    nb.cells[2].metadata["tags"] = []
+    assert len(_raising_cell_problems(nb)) == 1
+
+
 def test_render_runs_a_good_notebook_and_shows_its_output(site):
     html = (site / "notebooks/01-foundations/00-smoke.html").read_text()
     assert "Smoke test" in html
@@ -115,6 +175,27 @@ def test_stripped_solution_cell_never_reaches_the_rendered_page(tmp_path):
     assert "your code here" in html  # the stub is what the student sees
     assert SOLUTION_MARKER not in html
     assert SECRET_OUTPUT not in html
+
+
+def test_the_data_page_can_be_written_without_a_render(tmp_path, monkeypatch):
+    """CI writes the generated page this way before the prose gate reads it.
+
+    The page is not committed, and the gate fails on a path it cannot read
+    rather than passing over it, so this is the step that makes it readable. A
+    full render would also write it, at the cost of executing every notebook.
+
+    CI's dependency on this has two halves, and a test owns each. This one owns
+    the flag: that ``--write-data-page`` writes a complete page. It deliberately
+    writes somewhere harmless rather than into ``site/``, so it says nothing
+    about where the real page lands. The other half -- that the page is there
+    when the gate looks in ``site/`` -- belongs to the ``gated_target`` fixture
+    in ``tests/test_check_prose.py``, which writes it if a fresh clone has not.
+    """
+    monkeypatch.setattr(render_site, "SITE_DIR", tmp_path)
+    assert render_site.main(["--write-data-page"]) == 0
+    page = (tmp_path / "data.qmd").read_text(encoding="utf-8")
+    for info in registry.list_datasets():
+        assert info.title in page
 
 
 def test_data_page_lists_every_registered_dataset(site):
@@ -274,6 +355,47 @@ def test_accessibility_statement_is_ready_to_publish():
         "name the responsible institution (which restores the Accessibility "
         "Regulations citation and the EASS/ECNI enforcement route) and add the "
         "contact route, then remove the TODO"
+    )
+
+
+# Everything a student reads, for the placeholder gate below.
+# site/accessibility.qmd is left to the test above, which says what is missing
+# in that file by name. The glossary is here because a term left unfinished
+# there is read on every page that uses the word.
+PUBLISHED_CONTENT = (
+    ("site", "*.qmd"),
+    ("site/_stages", "*.qmd"),
+    ("hints", "*.yml"),
+    ("notebooks", "**/*.ipynb"),
+    ("student", "**/*.ipynb"),
+)
+
+
+@pytest.mark.skipif(
+    not os.environ.get("CWAI_PUBLISH_GATE"),
+    reason="publication gate: only enforced by the site workflow",
+)
+def test_no_placeholder_is_left_in_student_facing_content():
+    """Fails while a TODO remains in content a student reads.
+
+    The same mechanism as the statement gate above, and for the same reason. A
+    placeholder rests on somebody remembering it, and that is how one ships.
+    The glossary is the case this was written for: a term can be left
+    unfinished there while every page that uses the word still publishes.
+    """
+    left = []
+    for folder, pattern in PUBLISHED_CONTENT:
+        for path in sorted((REPO / folder).glob(pattern)):
+            if path.name == "accessibility.qmd":
+                continue  # named by the test above, with its own message
+            lines = path.read_text(encoding="utf-8").splitlines()
+            left += [
+                f"{path.relative_to(REPO)}:{number}: {line.strip()[:120]}"
+                for number, line in enumerate(lines, start=1)
+                if "TODO" in line
+            ]
+    assert not left, (
+        "supply what each line asks for, then remove the marker:\n" + "\n".join(left)
     )
 
 

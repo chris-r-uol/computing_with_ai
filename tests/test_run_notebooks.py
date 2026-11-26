@@ -24,6 +24,11 @@ def test_broken_notebook_is_reported_not_raised():
     assert "NameError" in result.error
 
 
+def test_a_tagged_raising_cell_does_not_fail_the_notebook_runner():
+    result = run(FIXTURES / "raises_exception.ipynb")
+    assert result.passed, result.error
+
+
 def _write(path, source):
     import nbformat
 

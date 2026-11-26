@@ -4,6 +4,10 @@ Each notebook runs on its own, from the repository root, so a notebook that
 quietly relies on another notebook's variables (or on a file only present on the
 author's machine) fails here rather than in a student's hands.
 
+A cell that fails on purpose needs the `raises-exception` tag so this script
+accepts it, and `#| error: true` as its first line so the Quarto render accepts
+it. See "Writing a cell that fails on purpose" in `student/README.md`.
+
 Usage:
     uv run python scripts/run_notebooks.py notebooks/
 """
