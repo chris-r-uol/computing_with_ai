@@ -84,6 +84,13 @@ never as wrong.
   and metric in `cwai.slices` instead of reading `expected.json`, then uses the
   same comparison, so the same value gets the same verdict. An unknown `slice_id`
   raises `UnknownSliceError`. An unknown metric name raises `UnknownCheckError`.
+- **A handoff has two stubs, and either one unattempted gives `○`.** A handoff
+  cell asks for an answer and for the slice it is for. A lesson therefore ships
+  `my_slice = ...` as well as `answer = ...`, because no student's slice may be
+  the authored default. So `check_slice(name, value, UNATTEMPTED)` returns the
+  unattempted result, exactly as an untouched `value` does. Only the sentinel
+  counts: a mistyped slice id still raises `UnknownSliceError`, so a typo is
+  never excused as a blank.
 
 ## Writing an entry
 

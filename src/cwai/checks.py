@@ -208,15 +208,22 @@ def expect_shape(df, rows: int | None = None, cols: int | None = None) -> None:
 def check_slice(name: str, value: object, slice_id: str) -> CheckResult:
     """Compare ``value`` with the answer for one student's slice of the data.
 
-    An unknown ``slice_id`` raises ``slices.UnknownSliceError``, which explains
-    itself. An unknown ``name`` raises ``UnknownCheckError``: that is a mistake
-    in the course material, so it raises even when the exercise is untouched.
+    A handoff has two stubs, not one: the answer, and the slice id it is for.
+    Either left untouched is an unattempted exercise, so an unpicked slice gets
+    the same neutral result as an unanswered question. A student who has not
+    chosen a slice yet has not got an exercise wrong.
+
+    An unknown ``slice_id`` still raises ``slices.UnknownSliceError``, which
+    explains itself: only the stub sentinel is read as unattempted, so a typo
+    is never excused. An unknown ``name`` raises ``UnknownCheckError``, and it
+    is checked first, because that is a mistake in the course material rather
+    than a blank answer.
     """
-    the_slice = slices.get(slice_id)
     if name not in slices.METRICS:
         raise UnknownCheckError(_unknown_name_message(name, slices.METRICS))
-    if value is UNATTEMPTED:
+    if slice_id is UNATTEMPTED or value is UNATTEMPTED:
         return _unattempted(name)
+    the_slice = slices.get(slice_id)
     metric = slices.METRICS[name]
     problem = _compare(metric.kind, metric.compute(the_slice), metric.tolerance, value)
     if problem is None:

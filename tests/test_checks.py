@@ -362,6 +362,29 @@ def test_check_slice_reads_an_untouched_stub_as_unattempted():
     assert result.attempted is False and "not attempted yet" in repr(result)
 
 
+def test_check_slice_reads_an_unpicked_slice_as_unattempted():
+    """A handoff cell has two stubs, and an unpicked slice is one of them.
+
+    The lesson's cell is ``my_slice = ...  # your slice id here``, so that no
+    student's slice is the authored default. A student who has not chosen yet
+    has not attempted the exercise, and must be told that rather than handed a
+    slice error for a slice they never named.
+    """
+    result = checks_module.check_slice("slice-row-count", 1, checks_module.UNATTEMPTED)
+    assert result.attempted is False and "not attempted yet" in repr(result)
+
+
+def test_check_slice_still_raises_on_a_mistyped_slice_id():
+    """Only the stub sentinel is unattempted. A typo stays an error.
+
+    The counterpart of the test above: if an unpicked slice were read as
+    unattempted by anything looser than an identity test, a real typo would be
+    silently excused instead of explained.
+    """
+    with pytest.raises(slices.UnknownSliceError):
+        checks_module.check_slice("slice-row-count", 1, "leedz")
+
+
 def test_check_slice_on_an_unknown_slice_raises_the_slice_error():
     with pytest.raises(slices.UnknownSliceError):
         checks_module.check_slice("slice-row-count", 1, "cyclist")
@@ -378,6 +401,12 @@ def test_check_slice_unknown_metric_raises_even_when_unattempted():
         checks_module.check_slice(
             "slice-row-counts", checks_module.UNATTEMPTED, "cyclists"
         )
+
+
+def test_check_slice_unknown_metric_raises_even_when_the_slice_is_unpicked():
+    """A wrong name is a mistake in the course material, so it never waits."""
+    with pytest.raises(UnknownCheckError):
+        checks_module.check_slice("slice-row-counts", 1, checks_module.UNATTEMPTED)
 
 
 def test_check_slice_gives_the_same_verdict_as_check_on_the_same_value():
