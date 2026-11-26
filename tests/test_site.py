@@ -122,10 +122,15 @@ def _raising_cell_problems(nb) -> list[str]:
 
 def test_every_raising_cell_carries_both_mechanisms():
     """One without the other breaks either CI or the published page."""
+    paths = [
+        path
+        for path in sorted((REPO / "notebooks").rglob("*.ipynb"))
+        if ".ipynb_checkpoints" not in path.parts
+    ]
+    # Without this, renaming notebooks/ makes the constraint silently vacuous.
+    assert paths, "found no notebooks under notebooks/"
     found = []
-    for path in sorted((REPO / "notebooks").rglob("*.ipynb")):
-        if ".ipynb_checkpoints" in path.parts:
-            continue
+    for path in paths:
         found += [
             f"{path.relative_to(REPO)}: {p}"
             for p in _raising_cell_problems(nbformat.read(path, as_version=4))
