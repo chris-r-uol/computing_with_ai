@@ -173,7 +173,7 @@ answer = ...  # your code here
 check("collisions-by-severity", answer)
 ```
 
-The exercise cell carries both the stub and its check, so the two are never separated. `Ellipsis` is a legitimate value, so the notebook runs end to end whether or not the exercise was attempted.
+*Corrected during execution, on first use:* **this cannot be built as one cell.** Tag that cell `solution` and stripping replaces the whole thing, check included; leave it untagged and the stub's `answer = ...` overwrites the real solution in the full notebook. A coding exercise is therefore **two adjacent cells** — the `solution` cell, which strips to the stub, then the check cell, which survives stripping and reads the name the student bound. This matches `build_student_notebooks.py`'s own docstring ("a later cell that uses it"). The `exercise` tag and `metadata.cwai.id` go on the exercise's **markdown prompt** cell, the one cell every exercise has whatever its shape. `Ellipsis` is a legitimate value, so the notebook runs end to end whether or not the exercise was attempted.
 
 **An unattempted check reads as unattempted, not failed.** This was the module lead's call. `CheckResult` currently renders `✓` or `✗`. It gains a third state: when the value handed to `check()` is the stub sentinel, it renders as *not attempted yet* with neutral wording and no cross. A wrong answer still gets `✗`; only an untouched stub gets the neutral state. So a visitor to the site sees a complete, working lesson with its exercises visibly waiting, and a student who answers wrongly is still told plainly.
 
@@ -190,7 +190,23 @@ With both in place the runner passes, the render succeeds, the traceback appears
 
 Python through the collision data from the first cell. Variables, types, collections, loops, conditionals, functions; then modules and imports; then `pandas`. Engineering practice woven in: reading a traceback, `assert`, the debugger, `pytest` on the student's own functions.
 
-The thread: **read one dataset, describe it, and learn where it lies to you.** Missing values, implausible coordinates, a severity field that is a code needing a lookup. The module lead's own session produced a live example worth using — a casualty-type code read one position out, turning cyclists into pedestrians, caught only because a number looked wrong.
+The thread: **read one dataset, describe it, and learn where it lies to you.** A severity field that is a code needing a lookup, and missing values that do not look missing.
+
+*Corrected during execution, against the real data:* there are **no blank or `NaN` values anywhere** — not in the collisions, casualties, vehicles or traffic counts, and no implausible coordinates either (the builder drops the (0, 0) placeholders and none of the rest are absent). So "missing values" as the design first meant them do not exist here, and neither does the coordinate lesson.
+
+What exists instead is better. DfT encodes "unknown" as **a number, usually -1**, so the column looks complete and `isna()` finds nothing:
+
+| Column | Rows coded -1 | Share |
+|---|---|---|
+| `vehicles.age_of_vehicle` | 12,637 of 37,152 | 34.0% |
+| `vehicles.age_of_driver` | 7,261 of 37,152 | 19.5% |
+| `vehicles.vehicle_manoeuvre` | 3,052 | 8.2% |
+| `casualties.sex_of_casualty` | 64 | — |
+| `casualties.age_of_casualty` | 45 | — |
+
+`weather_conditions` carries 339 rows of code 9 ("unknown") and `road_type` 607, which is the same trap in a different disguise.
+
+The headline example for a lesson: the mean of `age_of_driver` is **32.23** if you trust the column and **40.31** if you drop the -1 rows. **Eight years wrong, from a column with nothing blank in it, and no warning from pandas.** That is a stronger data-quality lesson than a blank cell, and it is the authentic shape of real transport data. `scripts/build_subsets.py`'s comment that "genuinely blank coordinates are kept: they are a data-quality lesson" is therefore describing rows that do not exist, and should be read with this correction. The module lead's own session produced a live example worth using — a casualty-type code read one position out, turning cyclists into pedestrians, caught only because a number looked wrong.
 
 Handoffs build the first half of the workbook: the slice chosen and justified, a first look at it, what was cleaned and why, a description of what is in it.
 
