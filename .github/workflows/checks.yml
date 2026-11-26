@@ -61,5 +61,16 @@ jobs:
       # lost its licence banner or its entry in site/vendor/NOTICE.txt.
       - run: uv run python scripts/selfhost_assets.py --check
       - run: uv run python scripts/check_licences.py
+      # The prose gate (design §7.8): plain English in everything a student
+      # reads. Every student-facing surface is listed here, because the gate
+      # checks what it is given. site/accessibility.qmd and site/glossary.qmd
+      # are exempt, with the reason, in the script itself. A Python module is
+      # named rather than swept up from a directory: most modules here are
+      # build tools, and a build tool's strings are not prose for students.
+      - run: >-
+          uv run python scripts/check_prose.py
+          site/index.qmd site/_stages scripts/render_site.py
+          src/cwai/checks.py src/cwai/slices.py src/cwai/data.py
+          hints notebooks
       - if: inputs.run-notebooks
         run: uv run python scripts/run_notebooks.py notebooks/

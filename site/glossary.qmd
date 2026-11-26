@@ -12,9 +12,9 @@ Technical terms in English with their Chinese equivalents. Lessons are taught in
 English, and vocabulary is often harder than grammar, so use this page whenever
 a word stops you.
 
-**This glossary grows with the material.** It currently holds the terms that
-Stage 1 (programming from first principles) needs. Each later stage adds its
-own.
+**This glossary grows with the material.** It holds the programming terms that
+Stage 1 needs, and the road-safety and statistics terms that Stages 1 and 2
+use. Each later stage adds its own.
 
 | English | 中文 | Meaning |
 |---|---|---|
@@ -45,3 +45,15 @@ own.
 | cell | [单元格]{lang="zh-Hans"} | One block of text or code in a notebook. |
 | repository | [仓库]{lang="zh-Hans"} | A project folder whose history is tracked by Git. |
 | commit | [提交]{lang="zh-Hans"} | A saved snapshot of your project in Git, with a message. |
+| kernel | [内核]{lang="zh-Hans"} | The Python process that runs a notebook's code and remembers its variables. |
+| parquet | Parquet [格式]{lang="zh-Hans"} | A file format for tables. It stores each column on its own, so it is small and quick to read. |
+| slice | [切片]{lang="zh-Hans"} | A part of a table that you pick out, such as one city or one type of casualty. |
+| aggregate | [汇总]{lang="zh-Hans"} | To add rows together into one number for each group, such as one total per year. |
+| categorical | [分类变量]{lang="zh-Hans"} | A column whose values are labels rather than numbers, such as the day of the week. |
+| collision | [碰撞事故]{lang="zh-Hans"} | A road crash that the police recorded. One row of the collision table is one collision. |
+| casualty | [伤亡人员]{lang="zh-Hans"} | A person hurt or killed in a collision. One collision can have several casualties. |
+| severity | [严重程度]{lang="zh-Hans"} | How bad an injury was. This data uses three levels: fatal, serious and slight. |
+| KSI | [死亡或重伤]{lang="zh-Hans"} | Killed or seriously injured. It counts the fatal and the serious casualties together, and leaves the slight ones out. |
+| exposure | [暴露量]{lang="zh-Hans"} | How much travel there was, such as the number of vehicles counted. You divide by it to turn a count into a rate. |
+| denominator | [分母]{lang="zh-Hans"} | The number you divide by. A count of 20 means little until you know the denominator. |
+| rate | [比率]{lang="zh-Hans"} | A count divided by exposure, such as collisions for every million vehicles counted. |

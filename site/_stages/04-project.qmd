@@ -9,8 +9,8 @@ An open project on a question you choose.
 ::: {.cwai-card}
 ## What this stage covers
 
-Your own question, your own data work, and the one question you must be able to
-answer about the result: how do you know this is right?
+Your own question, and your own data work. One question you must be able to
+answer about your result: how do you know it is right?
 :::
 
 ::: {.cwai-card}
